@@ -1538,7 +1538,7 @@ export default function MarketplacePage() {
                       </div>
                       {walletBalance !== null && (
                         <span className="text-xs font-medium text-gray-700">
-                          {parseFloat(walletBalance).toFixed(2)} USDr
+                          {parseFloat(walletBalance).toFixed(2)} HBAR
                         </span>
                       )}
                     </div>
@@ -1547,7 +1547,7 @@ export default function MarketplacePage() {
                   {insufficientBalance && (
                     <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                       <AlertTriangle className="size-3.5 shrink-0" />
-                      Insufficient USDr balance. Fund your wallet from the
+                      Insufficient HBAR balance. Fund your wallet from the
                       faucet first.
                     </div>
                   )}
