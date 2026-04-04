@@ -126,7 +126,7 @@ async function replayTopic(topicId: TopicId, handler: (msg: string) => void): Pr
     new TopicMessageQuery()
       .setTopicId(topicId)
       .setStartTime(0)
-      .subscribe(client, (message) => {
+      .subscribe(client, null, (message) => {
         const content = Buffer.from(message.contents).toString("utf8");
         handler(content);
         count++;
