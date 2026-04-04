@@ -40,12 +40,12 @@ export function Logo({ className }: LogoProps) {
           variants={{ hover: { x: 1 } }}
           aria-label="Finvoice"
         >
-          heds
+        
           <motion.span
             className="text-lime-500 font-normal"
             variants={{ hover: { color: "#65a30d" } }}
           >
-            up
+            Finvoice
           </motion.span>
           .fi
         </motion.span>
