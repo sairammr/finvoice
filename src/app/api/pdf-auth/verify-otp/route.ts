@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { privyVerifyEmailOtp } from "@/lib/privy-server";
+import { dynamicVerifyEmailOtp } from "@/lib/dynamic-server";
 import { storePdfSession } from "@/lib/pdf-sessions";
 
 function fdf(fields: Record<string, string>) {
@@ -25,12 +25,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const privyToken = await privyVerifyEmailOtp(debtorEmail, otpCode);
+    const dynamicToken = await dynamicVerifyEmailOtp(debtorEmail, otpCode);
     // Store session so /api/approve can validate it
-    await storePdfSession(privyToken, invoiceId, debtorEmail);
+    await storePdfSession(dynamicToken, invoiceId, debtorEmail);
     console.log(`[pdf-auth/verify-otp] authorised — invoiceId=${invoiceId} email=${debtorEmail}`);
     return fdf({
-      authToken: privyToken,
+      authToken: dynamicToken,
       status: "Authorised! You can now approve this invoice.",
     });
   } catch (err: unknown) {

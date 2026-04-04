@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { privySendEmailOtp } from "@/lib/privy-server";
+import { dynamicSendEmailOtp } from "@/lib/dynamic-server";
 
 function fdf(fields: Record<string, string>) {
   const entries = Object.entries(fields)
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!debtorEmail) return fdf({ status: "Error: debtor email not found in PDF." });
 
   try {
-    await privySendEmailOtp(debtorEmail);
+    await dynamicSendEmailOtp(debtorEmail);
     console.log(`[pdf-auth/request-otp] OTP sent to ${debtorEmail}`);
     return fdf({ status: `OTP sent to ${debtorEmail} — check your inbox.` });
   } catch (err: unknown) {
