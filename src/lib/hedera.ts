@@ -111,7 +111,7 @@ export interface ReceiptMetadata {
 // ── Mint attestation NFT ──
 // HTS NFT metadata is max 100 bytes. We store a compact pipe-delimited string:
 // invoiceId|riskGrade|discountBps|yieldBps|confidenceScore|hashPrefix
-// Full data lives in MongoDB. The NFT is proof of attestation existence.
+// Full data lives in Supabase. The NFT is proof of attestation existence.
 
 export async function mintAttestationNFT(
   metadata: AttestationMetadata
@@ -268,21 +268,9 @@ export async function getAttestationNFTInfo(serialNumber: number) {
   if (nftInfos.length === 0) return null;
 
   const nft = nftInfos[0];
-  const raw = Buffer.from(nft.metadata as Uint8Array).toString();
-  // Metadata is pipe-delimited: invoiceId|riskGrade|discountBps|yieldBps|confidenceScore|hashPrefix
-  const parts = raw.split("|");
-  const metadata: AttestationMetadata = {
-    invoiceId: parts[0] || "",
-    riskGrade: parts[1] || "",
-    discountBps: Number(parts[2]) || 0,
-    yieldBps: Number(parts[3]) || 0,
-    confidenceScore: Number(parts[4]) || 0,
-    faceValue: 0,
-    dueDate: "",
-    attestationHash: parts[5] || "",
-    pdfHash: "",
-    attestedAt: 0,
-  };
+  const metadata = JSON.parse(
+    Buffer.from(nft.metadata as Uint8Array).toString()
+  ) as AttestationMetadata;
 
   return {
     serialNumber,
@@ -302,7 +290,7 @@ export async function getTokenInfo(tokenId: TokenId) {
     name: info.name,
     symbol: info.symbol,
     totalSupply: info.totalSupply.toString(),
-    maxSupply: info.maxSupply?.toString() || "0",
+    maxSupply: info.maxSupply.toString(),
     treasury: info.treasuryAccountId?.toString(),
   };
 }

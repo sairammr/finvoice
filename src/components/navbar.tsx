@@ -33,7 +33,7 @@ import { Button } from "@/components/ui/button";
 import { useRole, type Role } from "@/components/providers";
 import { motion } from "framer-motion";
 
-const HEDERA_TESTNET_CHAIN_ID = 296;
+const FLARE_COSTON2_CHAIN_ID = 114;
 
 const navLinks = [
   {
@@ -86,7 +86,7 @@ export function Navbar() {
   >("idle");
   const [fundError, setFundError] = useState<string | null>(null);
 
-  // Switch wallet to Hedera Testnet on connect
+  // Switch wallet to Flare Testnet Coston2 on connect
   useEffect(() => {
     if (!authenticated || wallets.length === 0) return;
 
@@ -95,7 +95,7 @@ export function Navbar() {
       if (!wallet) return;
 
       try {
-        await wallet.switchChain(HEDERA_TESTNET_CHAIN_ID);
+        await wallet.switchChain(FLARE_COSTON2_CHAIN_ID);
       } catch {
         try {
           const provider = await wallet.getEthereumProvider();
@@ -103,16 +103,16 @@ export function Navbar() {
             method: "wallet_addEthereumChain",
             params: [
               {
-                chainId: `0x${HEDERA_TESTNET_CHAIN_ID.toString(16)}`,
-                chainName: "Hedera Testnet",
-                nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
-                rpcUrls: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"],
-                blockExplorerUrls: ["https://hashscan.io/testnet"],
+                chainId: `0x${FLARE_COSTON2_CHAIN_ID.toString(16)}`,
+                chainName: "Flare Testnet Coston2",
+                nativeCurrency: { name: "USDr", symbol: "USDr", decimals: 18 },
+                rpcUrls: ["https://coston2-api.flare.network/ext/C/rpc"],
+                blockExplorerUrls: ["https://coston2-explorer.flare.network"],
               },
             ],
           });
         } catch (addErr) {
-          console.error("Failed to add Hedera chain:", addErr);
+          console.error("Failed to add Flare chain:", addErr);
         }
       }
     }
@@ -120,32 +120,32 @@ export function Navbar() {
     switchChain();
   }, [authenticated, wallets]);
 
-  // Fetch HBAR balance directly from wallet provider
+  // Fetch USDr balance via server-side API route
   const fetchBalance = useCallback(async () => {
-    if (!walletAddress || wallets.length === 0) return;
+    if (!walletAddress) return;
     setIsLoadingBalance(true);
     try {
-      const provider = await wallets[0].getEthereumProvider();
-      const balanceHex = await provider.request({
-        method: "eth_getBalance",
-        params: [walletAddress, "latest"],
-      });
-      const balanceWei = BigInt(balanceHex as string);
-      const formatted = (Number(balanceWei) / 1e18).toString();
-      setBalanceFormatted(formatted);
+      const res = await fetch(`/api/balance?address=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBalanceFormatted(data.formatted);
+      }
     } catch {
       setBalanceFormatted(null);
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [walletAddress, wallets]);
+  }, [walletAddress]);
 
   useEffect(() => {
     if (!walletAddress) {
       setBalanceFormatted(null);
       return;
     }
+
     fetchBalance();
+    const interval = setInterval(fetchBalance, 15000);
+    return () => clearInterval(interval);
   }, [walletAddress, fetchBalance]);
 
   // Fund wallet: SIWE auth with faucet + claim
@@ -319,7 +319,7 @@ export function Navbar() {
                             : "text-lime-600"
                         }`}
                       >
-                        {balanceDisplay} HBAR
+                        {balanceDisplay} USDr
                       </span>
                     </>
                   )}
@@ -347,7 +347,7 @@ export function Navbar() {
                     <div className="px-2 py-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">
-                          HBAR Balance
+                          USDr Balance
                         </span>
                         <span
                           className={`text-sm font-semibold ${
@@ -355,13 +355,13 @@ export function Navbar() {
                           }`}
                         >
                           {balanceDisplay !== null
-                            ? `${balanceDisplay} HBAR`
+                            ? `${balanceDisplay} USDr`
                             : "Loading..."}
                         </span>
                       </div>
                       {isZeroBalance && (
                         <p className="mt-1.5 text-[11px] leading-tight text-gray-500">
-                          You need HBAR to pay gas on Hedera Testnet.
+                          You need C2FLR to pay gas on Flare Coston2.
                         </p>
                       )}
                     </div>
@@ -393,12 +393,12 @@ export function Navbar() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() =>
-                        window.open("https://portal.hedera.com/faucet", "_blank")
+                        window.open("https://faucet.flare.network/coston2", "_blank")
                       }
                       className="flex items-center gap-2 text-xs text-gray-500"
                     >
                       <ExternalLink className="size-3.5" />
-                      Open Hedera Faucet
+                      Open Flare Faucet
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />
