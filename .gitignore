@@ -78,3 +78,4 @@ tee-extension/typescript/node_modules
 .claude/skills/ui-ux-pro-max/data/icons.csv
 .claude/skills/ui-ux-pro-max/data/colors.csv
 .claude/skills/ui-ux-pro-max/data/charts.csv
+bun.lock

@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["pdf-lib"],
+  serverExternalPackages: ["@hashgraph/sdk"],
   async headers() {
     return [
       {
