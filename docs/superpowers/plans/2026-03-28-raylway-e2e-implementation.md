@@ -735,3 +735,740 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { defineChain } from "viem";
+
+import { InvoiceTokenABI } from "./abis/InvoiceToken";
+import { InvoiceMarketplaceABI } from "./abis/InvoiceMarketplace";
+import { InvoiceReceiptABI } from "./abis/InvoiceReceipt";
+import { MockUSDCABI } from "./abis/MockUSDC";
+
+// ── Chain definitions ──
+
+export const privacyNode = defineChain({
+  id: Number(process.env.PRIVACY_NODE_CHAIN_ID || 800004),
+  name: "Flare TEE 4",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: [process.env.PRIVACY_NODE_RPC_URL || "https://privacy-node-4.flare.com"] },
+  },
+  blockExplorers: {
+    default: { name: "Blockscout", url: "https://blockscout-privacy-node-4.flare.com" },
+  },
+});
+
+export const publicTestnet = defineChain({
+  id: Number(process.env.PUBLIC_L1_CHAIN_ID || 7295799),
+  name: "Flare Coston2",
+  nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: [process.env.PUBLIC_L1_RPC_URL || "https://testnet-rpc.flare.com/"] },
+  },
+  blockExplorers: {
+    default: { name: "Explorer", url: "https://testnet-explorer.flare.com/" },
+  },
+});
+
+// ── Clients ──
+
+const account = privateKeyToAccount(`0x${process.env.PRIVATE_KEY}` as `0x${string}`);
+
+export const privacyNodePublicClient = createPublicClient({
+  chain: privacyNode,
+  transport: http(),
+});
+
+export const privacyNodeWalletClient = createWalletClient({
+  account,
+  chain: privacyNode,
+  transport: http(),
+});
+
+export const publicClient = createPublicClient({
+  chain: publicTestnet,
+  transport: http(),
+});
+
+export const publicWalletClient = createWalletClient({
+  account,
+  chain: publicTestnet,
+  transport: http(),
+});
+
+// ── Contract addresses ──
+
+export const addresses = {
+  invoiceToken: process.env.INVOICE_TOKEN_ADDRESS as Address,
+  invoiceMarketplace: process.env.INVOICE_MARKETPLACE_ADDRESS as Address,
+  invoiceReceipt: process.env.INVOICE_RECEIPT_ADDRESS as Address,
+  mockUSDC: process.env.MOCK_USDC_ADDRESS as Address,
+};
+
+// ── Contract instances ──
+
+export function getInvoiceToken() {
+  return getContract({
+    address: addresses.invoiceToken,
+    abi: InvoiceTokenABI,
+    client: { public: privacyNodePublicClient, wallet: privacyNodeWalletClient },
+  });
+}
+
+export function getInvoiceMarketplace() {
+  return getContract({
+    address: addresses.invoiceMarketplace,
+    abi: InvoiceMarketplaceABI,
+    client: { public: publicClient, wallet: publicWalletClient },
+  });
+}
+
+export function getInvoiceReceipt() {
+  return getContract({
+    address: addresses.invoiceReceipt,
+    abi: InvoiceReceiptABI,
+    client: { public: publicClient },
+  });
+}
+
+export function getMockUSDC() {
+  return getContract({
+    address: addresses.mockUSDC,
+    abi: MockUSDCABI,
+    client: { public: publicClient, wallet: publicWalletClient },
+  });
+}
+
+// ── Helpers ──
+
+export function hashString(value: string): `0x${string}` {
+  return keccak256(toBytes(value));
+}
+
+export { account };
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/lib/abis/ src/lib/contracts.ts
+git commit -m "feat: add contract ABIs and viem blockchain client library"
+```
+
+---
+
+## Task 7: Create Supabase Schema and Invoice API
+
+**Files:**
+- Create: `src/app/api/invoices/route.ts`
+
+- [ ] **Step 1: Create the invoices table in Supabase**
+
+Go to the Supabase dashboard at `https://supabase.com/dashboard` for the project, open the SQL editor, and run:
+
+```sql
+CREATE TABLE IF NOT EXISTS invoices (
+  id TEXT PRIMARY KEY,
+  token_id INTEGER,
+  supplier_name TEXT NOT NULL,
+  supplier_address TEXT,
+  debtor_name TEXT NOT NULL,
+  debtor_email TEXT,
+  face_value INTEGER NOT NULL,
+  currency TEXT DEFAULT 'USDC',
+  terms TEXT,
+  due_date TIMESTAMPTZ,
+  line_items JSONB,
+  jurisdiction TEXT DEFAULT 'Brazil',
+  payment_history TEXT DEFAULT 'Good payment history, no defaults',
+  status TEXT DEFAULT 'draft',
+  pdf_hash TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  approved_at TIMESTAMPTZ,
+  tx_hash TEXT
+);
+
+-- Allow public access for demo (no RLS for hackathon)
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON invoices FOR ALL USING (true) WITH CHECK (true);
+```
+
+- [ ] **Step 2: Create /api/invoices/route.ts**
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+import {
+  getInvoiceToken,
+  privacyNodePublicClient,
+  privacyNodeWalletClient,
+  account,
+  hashString,
+  addresses,
+} from "@/lib/contracts";
+import { InvoiceTokenABI } from "@/lib/abis/InvoiceToken";
+import { parseEventLogs } from "viem";
+
+export async function GET() {
+  const { data, error } = await supabase
+    .from("invoices")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ invoices: data });
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const {
+    supplierName,
+    supplierAddress,
+    debtorName,
+    debtorEmail,
+    amount,
+    terms,
+    dueDate,
+    lineItems,
+    jurisdiction,
+    paymentHistory,
+  } = body;
+
+  const invoiceId = `INV-${Date.now().toString(36).toUpperCase()}`;
+  const dueDateTimestamp = Math.floor(new Date(dueDate).getTime() / 1000);
+  const faceValueWei = BigInt(amount) * BigInt(1e6); // USDC has 6 decimals
+  const pdfHash = hashString(`${invoiceId}-${debtorName}-${amount}`);
+
+  // 1. Create invoice on-chain (Privacy Node)
+  let tokenId: number | null = null;
+  let txHash: string | null = null;
+
+  try {
+    const hash = await privacyNodeWalletClient.writeContract({
+      address: addresses.invoiceToken,
+      abi: InvoiceTokenABI,
+      functionName: "createInvoice",
+      args: [
+        account.address, // supplier (deployer for demo)
+        account.address, // debtor (deployer for demo — approval proxy)
+        hashString(debtorName),
+        debtorName,
+        faceValueWei,
+        BigInt(dueDateTimestamp),
+        jurisdiction || "Brazil",
+        paymentHistory || "Good payment history, no defaults",
+        terms,
+        pdfHash,
+      ],
+    });
+
+    txHash = hash;
+
+    // Wait for receipt and extract tokenId from event
+    const receipt = await privacyNodePublicClient.waitForTransactionReceipt({ hash });
+    const logs = parseEventLogs({
+      abi: InvoiceTokenABI,
+      logs: receipt.logs,
+      eventName: "InvoiceCreated",
+    });
+
+    if (logs.length > 0) {
+      tokenId = Number(logs[0].args.tokenId);
+    }
+  } catch (err) {
+    console.error("On-chain invoice creation failed:", err);
+    // Continue with Supabase storage even if on-chain fails
+  }
+
+  // 2. Store in Supabase
+  const { data, error } = await supabase.from("invoices").insert({
+    id: invoiceId,
+    token_id: tokenId,
+    supplier_name: supplierName,
+    supplier_address: supplierAddress,
+    debtor_name: debtorName,
+    debtor_email: debtorEmail,
+    face_value: amount,
+    currency: "USDC",
+    terms,
+    due_date: dueDate,
+    line_items: lineItems,
+    jurisdiction: jurisdiction || "Brazil",
+    payment_history: paymentHistory || "Good payment history, no defaults",
+    status: tokenId !== null ? "pending_approval" : "draft",
+    pdf_hash: pdfHash,
+    tx_hash: txHash,
+  }).select().single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    success: true,
+    invoice: data,
+    tokenId,
+    txHash,
+  });
+}
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/app/api/invoices/route.ts
+git commit -m "feat: add real invoice API with on-chain creation and Supabase storage"
+```
+
+---
+
+## Task 8: Implement Real AI Scoring with OpenRouter
+
+**Files:**
+- Create: `src/lib/scoring.ts`
+- Modify: `src/app/api/score/route.ts`
+
+- [ ] **Step 1: Create scoring.ts — OpenRouter LLM integration**
+
+```typescript
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+interface ScoringInput {
+  invoiceId: string;
+  debtorName: string;
+  faceValue: number;
+  dueDate: string;
+  terms: string;
+  jurisdiction: string;
+  paymentHistory: string;
+  supplierName: string;
+}
+
+interface ScoringResult {
+  riskGrade: "A" | "B" | "C" | "D";
+  discountBps: number;
+  yieldBps: number;
+  confidenceScore: number;
+  reasoning: string;
+}
+
+const SYSTEM_PROMPT = `You are an institutional credit scoring agent operating on a sovereign Flare TEE. You have access to confidential invoice metadata that must NEVER be included in your public attestation.
+
+Your job:
+1. Analyze the invoice metadata (debtor identity, payment history, jurisdiction, terms, face value, maturity)
+2. Produce a structured risk assessment
+3. Output a PUBLIC attestation (risk grade + discount rate) that contains NO private information
+4. Output a PRIVATE reasoning document that stays on the Privacy Node
+
+Grading scale:
+- A: Excellent payment history, low-risk jurisdiction, short maturity
+- B: Good payment history, moderate risk factors
+- C: Mixed payment history or elevated jurisdiction risk
+- D: Poor payment history, high risk, or compliance concerns
+
+Discount rate calculation:
+- Base rate: 1.5% (A), 3.0% (B), 5.5% (C), 9.0% (D)
+- Maturity adjustment: +0.5% per 30 days beyond 30
+- Jurisdiction adjustment: +0.5-2.0% for elevated-risk jurisdictions
+
+You MUST respond with ONLY a valid JSON object in this exact format:
+{
+  "riskGrade": "A",
+  "discountBps": 210,
+  "confidenceScore": 94,
+  "reasoning": "Full analysis text here..."
+}
+
+The discountBps is the discount in basis points (e.g., 210 = 2.10%).
+The confidenceScore is 0-100.
+The reasoning should reference the debtor and specifics but this stays private.`;
+
+export async function scoreInvoice(input: ScoringInput): Promise<ScoringResult> {
+  const dueDate = new Date(input.dueDate);
+  const now = new Date();
+  const tenureDays = Math.max(1, Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+  const userPrompt = `Score this invoice:
+
+- Invoice ID: ${input.invoiceId}
+- Debtor: ${input.debtorName}
+- Supplier: ${input.supplierName}
+- Face Value: $${input.faceValue.toLocaleString()} USDC
+- Due Date: ${input.dueDate}
+- Tenure: ${tenureDays} days
+- Terms: ${input.terms}
+- Jurisdiction: ${input.jurisdiction}
+- Payment History: ${input.paymentHistory}
+
+Return ONLY the JSON object.`;
+
+  const response = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "anthropic/claude-sonnet-4",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`OpenRouter API error: ${response.status} ${errText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+
+  // Parse JSON from response (handle markdown code blocks)
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("Failed to parse scoring response as JSON");
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]);
+
+  // Calculate yield from discount
+  const discountBps = parsed.discountBps;
+  const yieldBps = Math.round(
+    (discountBps / 100 / (1 - discountBps / 10000)) * (365 / tenureDays) * 100
+  );
+
+  return {
+    riskGrade: parsed.riskGrade,
+    discountBps: parsed.discountBps,
+    yieldBps,
+    confidenceScore: parsed.confidenceScore,
+    reasoning: parsed.reasoning,
+  };
+}
+```
+
+- [ ] **Step 2: Replace mock /api/score with real implementation**
+
+`src/app/api/score/route.ts`:
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import { scoreInvoice } from "@/lib/scoring";
+import { supabase } from "@/lib/supabase";
+import {
+  privacyNodeWalletClient,
+  privacyNodePublicClient,
+  addresses,
+  hashString,
+} from "@/lib/contracts";
+import { InvoiceTokenABI } from "@/lib/abis/InvoiceToken";
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { invoiceId } = body;
+
+  // 1. Get invoice from Supabase
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("id", invoiceId)
+    .single();
+
+  if (error || !invoice) {
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  }
+
+  // 2. Run AI scoring via OpenRouter
+  let scoring;
+  try {
+    scoring = await scoreInvoice({
+      invoiceId: invoice.id,
+      debtorName: invoice.debtor_name,
+      faceValue: invoice.face_value,
+      dueDate: invoice.due_date,
+      terms: invoice.terms,
+      jurisdiction: invoice.jurisdiction,
+      paymentHistory: invoice.payment_history,
+      supplierName: invoice.supplier_name,
+    });
+  } catch (err) {
+    console.error("AI scoring failed:", err);
+    return NextResponse.json({ error: "AI scoring failed" }, { status: 500 });
+  }
+
+  // 3. Post attestation on-chain (Privacy Node → bridges to Public L1 via Arbitrary Message)
+  let attestationTxHash: string | null = null;
+
+  if (invoice.token_id !== null) {
+    try {
+      const attestationHash = hashString(
+        `${invoiceId}-${scoring.riskGrade}-${scoring.discountBps}-${scoring.confidenceScore}`
+      );
+
+      const hash = await privacyNodeWalletClient.writeContract({
+        address: addresses.invoiceToken,
+        abi: InvoiceTokenABI,
+        functionName: "setAttestation",
+        args: [
+          BigInt(invoice.token_id),
+          scoring.riskGrade,
+          BigInt(scoring.discountBps),
+          BigInt(scoring.yieldBps),
+          BigInt(scoring.confidenceScore),
+          attestationHash,
+        ],
+      });
+
+      attestationTxHash = hash;
+      await privacyNodePublicClient.waitForTransactionReceipt({ hash });
+
+      // Update invoice status in Supabase
+      await supabase
+        .from("invoices")
+        .update({ status: "listed" })
+        .eq("id", invoiceId);
+    } catch (err) {
+      console.error("On-chain attestation failed:", err);
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    invoiceId,
+    scoring: {
+      riskGrade: scoring.riskGrade,
+      discountBps: scoring.discountBps,
+      yieldBps: scoring.yieldBps,
+      confidenceScore: scoring.confidenceScore,
+      reasoning: scoring.reasoning,
+      attestationHash: attestationTxHash
+        ? hashString(`${invoiceId}-${scoring.riskGrade}-${scoring.discountBps}-${scoring.confidenceScore}`)
+        : null,
+    },
+    attestationTxHash,
+  });
+}
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add src/lib/scoring.ts src/app/api/score/route.ts
+git commit -m "feat: implement real AI credit scoring via OpenRouter with on-chain attestation"
+```
+
+---
+
+## Task 9: Implement Real Approval API
+
+**Files:**
+- Modify: `src/app/api/approve/route.ts`
+
+- [ ] **Step 1: Replace mock with real on-chain approval**
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
+import {
+  privacyNodeWalletClient,
+  privacyNodePublicClient,
+  addresses,
+} from "@/lib/contracts";
+import { InvoiceTokenABI } from "@/lib/abis/InvoiceToken";
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { invoiceId } = body;
+
+  // 1. Get invoice from Supabase
+  const { data: invoice, error } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("id", invoiceId)
+    .single();
+
+  if (error || !invoice) {
+    return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  }
+
+  if (invoice.token_id === null) {
+    return NextResponse.json({ error: "Invoice not yet tokenized" }, { status: 400 });
+  }
+
+  // 2. Approve invoice on-chain (as approval proxy)
+  let approveTxHash: string | null = null;
+  try {
+    const hash = await privacyNodeWalletClient.writeContract({
+      address: addresses.invoiceToken,
+      abi: InvoiceTokenABI,
+      functionName: "approveInvoice",
+      args: [BigInt(invoice.token_id)],
+    });
+
+    approveTxHash = hash;
+    await privacyNodePublicClient.waitForTransactionReceipt({ hash });
+
+    // Update Supabase
+    await supabase
+      .from("invoices")
+      .update({
+        status: "approved",
+        approved_at: new Date().toISOString(),
+      })
+      .eq("id", invoiceId);
+  } catch (err: any) {
+    console.error("On-chain approval failed:", err);
+    // If already approved, continue to scoring
+    if (!err.message?.includes("Already approved")) {
+      return NextResponse.json({ error: "Approval failed: " + err.message }, { status: 500 });
+    }
+  }
+
+  // 3. Trigger AI scoring
+  let scoringResult = null;
+  try {
+    await supabase.from("invoices").update({ status: "scoring" }).eq("id", invoiceId);
+
+    const scoreResponse = await fetch(
+      new URL("/api/score", request.url).toString(),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoiceId }),
+      }
+    );
+
+    scoringResult = await scoreResponse.json();
+  } catch (err) {
+    console.error("Scoring trigger failed:", err);
+  }
+
+  return NextResponse.json({
+    success: true,
+    invoiceId,
+    tokenId: invoice.token_id,
+    approveTxHash,
+    scoring: scoringResult?.scoring || null,
+    message: "Invoice approved and scored on Privacy Node",
+  });
+}
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add src/app/api/approve/route.ts
+git commit -m "feat: implement real on-chain approval with AI scoring pipeline"
+```
+
+---
+
+## Task 10: Implement Listings API (Read from Public L1)
+
+**Files:**
+- Create: `src/app/api/listings/route.ts`
+
+- [ ] **Step 1: Create /api/listings/route.ts**
+
+```typescript
+import { NextResponse } from "next/server";
+import { publicClient, addresses } from "@/lib/contracts";
+import { InvoiceMarketplaceABI } from "@/lib/abis/InvoiceMarketplace";
+import { formatUnits } from "viem";
+
+export async function GET() {
+  try {
+    // Read all listings from the public marketplace contract
+    const listings = await publicClient.readContract({
+      address: addresses.invoiceMarketplace,
+      abi: InvoiceMarketplaceABI,
+      functionName: "getAllListings",
+    });
+
+    // Format for frontend consumption
+    const formatted = (listings as any[]).map((listing: any, index: number) => ({
+      id: `LST-${listing.receiptId.toString().padStart(3, "0")}`,
+      invoiceId: `INV-${listing.receiptId.toString()}`,
+      tokenId: Number(listing.receiptId),
+      riskGrade: listing.riskGrade,
+      discountBps: Number(listing.discountBps),
+      yieldBps: Number(listing.yieldBps),
+      faceValue: Number(formatUnits(listing.faceValue, 6)), // USDC 6 decimals
+      purchasePrice: Number(formatUnits(listing.purchasePrice, 6)),
+      maturityDate: new Date(Number(listing.maturityDate) * 1000).toISOString(),
+      tenure: Number(listing.tenure),
+      confidenceScore: Number(listing.confidenceScore),
+      attestationHash: listing.attestationHash,
+      pdfHash: listing.pdfHash,
+      listedAt: new Date(Number(listing.listedAt) * 1000).toISOString(),
+      funded: listing.funded,
+      funder: listing.funder === "0x0000000000000000000000000000000000000000" ? null : listing.funder,
+    }));
+
+    return NextResponse.json({ listings: formatted });
+  } catch (err: any) {
+    console.error("Failed to read listings:", err);
+    // Fallback: return empty array if contract not deployed or no listings
+    return NextResponse.json({ listings: [] });
+  }
+}
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add src/app/api/listings/route.ts
+git commit -m "feat: add listings API reading from Public L1 InvoiceMarketplace"
+```
+
+---
+
+## Task 11: Implement Fund API
+
+**Files:**
+- Create: `src/app/api/fund/route.ts`
+
+- [ ] **Step 1: Create /api/fund/route.ts**
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import {
+  publicWalletClient,
+  publicClient,
+  addresses,
+  account,
+} from "@/lib/contracts";
+import { InvoiceMarketplaceABI } from "@/lib/abis/InvoiceMarketplace";
+import { MockUSDCABI } from "@/lib/abis/MockUSDC";
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { listingId } = body;
+
+  const tokenId = BigInt(listingId);
+
+  try {
+    // 1. Read listing to get purchase price
+    const listing = await publicClient.readContract({
+      address: addresses.invoiceMarketplace,
+      abi: InvoiceMarketplaceABI,
+      functionName: "getListing",
+      args: [tokenId],
+    }) as any;
+
+    if (listing.funded) {
+      return NextResponse.json({ error: "Already funded" }, { status: 400 });
+    }
+
+    const purchasePrice = listing.purchasePrice;
+
+    // 2. Approve stablecoin spending
+    const approveHash = await publicWalletClient.writeContract({
+      address: addresses.mockUSDC,
+      abi: MockUSDCABI,
+      functionName: "approve",
+      args: [addresses.invoiceMarketplace, purchasePrice],
