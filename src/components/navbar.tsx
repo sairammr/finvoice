@@ -105,7 +105,7 @@ export function Navbar() {
               {
                 chainId: `0x${FLARE_COSTON2_CHAIN_ID.toString(16)}`,
                 chainName: "Flare Testnet Coston2",
-                nativeCurrency: { name: "USDr", symbol: "USDr", decimals: 18 },
+                nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
                 rpcUrls: ["https://coston2-api.flare.network/ext/C/rpc"],
                 blockExplorerUrls: ["https://coston2-explorer.flare.network"],
               },
@@ -120,7 +120,7 @@ export function Navbar() {
     switchChain();
   }, [authenticated, wallets]);
 
-  // Fetch USDr balance via server-side API route
+  // Fetch HBAR balance via server-side API route
   const fetchBalance = useCallback(async () => {
     if (!walletAddress) return;
     setIsLoadingBalance(true);
@@ -319,7 +319,7 @@ export function Navbar() {
                             : "text-lime-600"
                         }`}
                       >
-                        {balanceDisplay} USDr
+                        {balanceDisplay} HBAR
                       </span>
                     </>
                   )}
@@ -347,7 +347,7 @@ export function Navbar() {
                     <div className="px-2 py-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-500">
-                          USDr Balance
+                          HBAR Balance
                         </span>
                         <span
                           className={`text-sm font-semibold ${
@@ -355,7 +355,7 @@ export function Navbar() {
                           }`}
                         >
                           {balanceDisplay !== null
-                            ? `${balanceDisplay} USDr`
+                            ? `${balanceDisplay} HBAR`
                             : "Loading..."}
                         </span>
                       </div>
