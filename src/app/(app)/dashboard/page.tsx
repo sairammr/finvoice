@@ -9,7 +9,7 @@ import {
   getRiskGradeColor,
 } from "@/lib/data";
 import { useRole } from "@/components/providers";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useDynamicContext, useUserWallets } from "@dynamic-labs/sdk-react-core";
 import {
   Card,
   CardContent,
@@ -104,9 +104,9 @@ function StatCard({
 
 export default function DashboardPage() {
   const { role } = useRole();
-  const { user } = usePrivy();
-  const { wallets } = useWallets();
-  const walletAddress = user?.wallet?.address ?? "";
+  const { primaryWallet } = useDynamicContext();
+  const userWallets = useUserWallets();
+  const walletAddress = primaryWallet?.address ?? "";
 
   const [apiInvoices, setApiInvoices] = useState<any[]>([]);
   const [apiListings, setApiListings] = useState<any[]>([]);
@@ -205,11 +205,11 @@ export default function DashboardPage() {
 
   async function handleSettle(inv: any) {
     const listing = getListingForInvoice(inv);
-    if (!listing || !wallets[0] || !walletAddress) return;
+    if (!listing || !primaryWallet || !walletAddress) return;
     setSettlingId(inv.id);
     try {
-      const wallet = wallets[0];
-      const provider = await wallet.getEthereumProvider();
+      const connector = primaryWallet.connector;
+      const provider = await (connector as any).getPublicClient();
       const funderAddress = listing.funder;
 
       if (!funderAddress) {
@@ -220,7 +220,7 @@ export default function DashboardPage() {
 
       // Send face value HBAR from debtor/supplier wallet to funder wallet
       const amountInWei = BigInt(Math.round(Number(inv.amount) * 1e18));
-      const txHash = await provider.request({
+      const txHash = await (provider as any).request({
         method: "eth_sendTransaction",
         params: [{
           from: walletAddress,

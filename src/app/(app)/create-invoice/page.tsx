@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePrivy } from "@privy-io/react-auth";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -46,8 +46,8 @@ function truncateAddress(addr: string) {
 }
 
 export default function CreateInvoicePage() {
-  const { user } = usePrivy();
-  const walletAddress = user?.wallet?.address ?? "";
+  const { primaryWallet } = useDynamicContext();
+  const walletAddress = primaryWallet?.address ?? "";
 
   const [supplierName, setSupplierName] = useState("");
   const [debtorName, setDebtorName] = useState("");

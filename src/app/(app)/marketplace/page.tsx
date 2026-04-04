@@ -45,7 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useDynamicContext, useUserWallets } from "@dynamic-labs/sdk-react-core";
 
 type RiskFilter = "All" | "A" | "B" | "C" | "D";
 type SortBy = "yield" | "faceValue" | "tenure" | "riskGrade";
@@ -749,9 +749,11 @@ export default function MarketplacePage() {
   const [recentlyFunded, setRecentlyFunded] = useState<Set<string>>(new Set());
   const [walletBalance, setWalletBalance] = useState<string | null>(null);
 
-  const { ready, authenticated, login } = usePrivy();
-  const { wallets } = useWallets();
-  const walletAddress = wallets[0]?.address;
+  const { sdkHasLoaded, primaryWallet, setShowAuthFlow } = useDynamicContext();
+  const userWallets = useUserWallets();
+  const ready = sdkHasLoaded;
+  const authenticated = !!primaryWallet;
+  const walletAddress = primaryWallet?.address;
 
   const fetchWalletBalance = useCallback(async () => {
     if (!walletAddress) return;
@@ -865,16 +867,16 @@ export default function MarketplacePage() {
 
   async function handleConfirmFund() {
     if (!selectedListing) return;
-    if (!authenticated || !wallets[0]) {
-      login();
+    if (!authenticated || !primaryWallet) {
+      setShowAuthFlow(true);
       return;
     }
     setFunding(true);
     setFundError(null);
 
     try {
-      const wallet = wallets[0];
-      const provider = await wallet.getEthereumProvider();
+      const connector = primaryWallet!.connector;
+      const provider = await (connector as any).getPublicClient();
       const supplierAddress = (selectedListing as any).supplierAddress;
 
       if (!supplierAddress) {
@@ -885,7 +887,7 @@ export default function MarketplacePage() {
 
       // Step 1: Send HBAR from funder's wallet to invoice creator's wallet
       const amountInWei = BigInt(Math.round(selectedListing.purchasePrice * 1e18));
-      const txHash = await provider.request({
+      const txHash = await (provider as any).request({
         method: "eth_sendTransaction",
         params: [{
           from: walletAddress,
@@ -1654,7 +1656,7 @@ export default function MarketplacePage() {
             </Button>
             {!authenticated ? (
               <Button
-                onClick={() => login()}
+                onClick={() => setShowAuthFlow(true)}
                 className="gap-1.5 bg-lime-400 font-semibold text-lime-950 hover:bg-lime-500"
               >
                 <Wallet className="size-3.5" />
