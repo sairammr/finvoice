@@ -958,7 +958,7 @@ export default function Home() {
               {
                 icon: Shield,
                 title: "Approve",
-                desc: 'Debtor clicks "Approve on Flare" in the PDF. Invoice tokenized on Privacy Node.',
+                desc: 'Debtor clicks "Approve on Flare" in the PDF. Invoice tokenized on Flare TEE.',
                 step: "02",
               },
               {

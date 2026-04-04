@@ -1,6 +1,6 @@
 /**
- * PDF session management — re-exports from db.ts (MongoDB-backed).
- * TTL: 30 minutes via MongoDB TTL index on expires_at field.
+ * PDF session management — re-exports from db.ts (HCS-backed).
+ * TTL: 30 minutes via HCS TTL index on expires_at field.
  */
 export {
   storePdfSession,

@@ -1,5 +1,5 @@
 /**
- * HCS-backed data store — replaces MongoDB entirely.
+ * HCS-backed data store — decentralized event store on Hedera.
  *
  * Every invoice lifecycle event is an HCS message on the Invoice Topic.
  * On startup, replays all messages to rebuild in-memory state.

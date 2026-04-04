@@ -172,10 +172,10 @@ function computeListingScoring(listing: MarketplaceListing): AiScoring {
     discountBps: listing.discountBps,
     yieldBps: listing.yieldBps,
     confidenceScore: listing.confidenceScore,
-    reasoning: `Invoice ${listing.invoiceId} scored grade ${grade} with ${listing.confidenceScore}% AI confidence. Discount rate: ${formatBps(listing.discountBps)}, annualized yield: ${formatBps(listing.yieldBps)}. Risk factors were assessed via Privacy Node using privacy-preserving computation.`,
+    reasoning: `Invoice ${listing.invoiceId} scored grade ${grade} with ${listing.confidenceScore}% AI confidence. Discount rate: ${formatBps(listing.discountBps)}, annualized yield: ${formatBps(listing.yieldBps)}. Risk factors were assessed via Flare TEE using privacy-preserving computation.`,
     factors: {
-      paymentHistory: "Payment history assessed via Privacy Node",
-      jurisdictionRisk: "Jurisdiction risk assessed via Privacy Node",
+      paymentHistory: "Payment history assessed via Flare TEE",
+      jurisdictionRisk: "Jurisdiction risk assessed via Flare TEE",
       invoiceValidity: validityFactor,
       complianceCheck: complianceFactor,
     },

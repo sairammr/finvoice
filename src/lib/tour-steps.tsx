@@ -107,7 +107,7 @@ export const tours: Tour[] = [
         icon: <Lock className={iconClass} aria-hidden />,
         title: "Privacy by Design",
         content:
-          "Debtor identities and invoice details stay on the Privacy Node — only risk grades and yield rates are published on-chain. Every attestation hash is verifiable on the Flare Coston2 explorer. You're ready to go!",
+          "Debtor identities and invoice details stay on the Flare TEE — only risk grades and yield rates are published on-chain. Every attestation hash is verifiable on the Flare Coston2 explorer. You're ready to go!",
         side: "bottom",
         showControls: true,
         showSkip: false,

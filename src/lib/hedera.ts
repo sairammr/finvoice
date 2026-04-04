@@ -111,7 +111,7 @@ export interface ReceiptMetadata {
 // ── Mint attestation NFT ──
 // HTS NFT metadata is max 100 bytes. We store a compact pipe-delimited string:
 // invoiceId|riskGrade|discountBps|yieldBps|confidenceScore|hashPrefix
-// Full data lives in MongoDB. The NFT is proof of attestation existence.
+// Full data lives in HCS. The NFT is proof of attestation existence.
 
 export async function mintAttestationNFT(
   metadata: AttestationMetadata

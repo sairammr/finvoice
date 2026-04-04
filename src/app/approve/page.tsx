@@ -36,7 +36,7 @@ type ApprovalStep =
 
 function ApproveContent() {
   const searchParams = useSearchParams();
-  /** Must match a row in Supabase (e.g. from PDF link `/approve?invoiceId=INV-…`). */
+  /** Must match an invoice in HCS store (e.g. from PDF link `/approve?invoiceId=INV-…`). */
   const invoiceIdParam = searchParams.get("invoiceId");
 
   const [step, setStep] = useState<ApprovalStep>("verify");
@@ -129,7 +129,7 @@ function ApproveContent() {
     },
     {
       id: "tokenizing",
-      label: "Tokenizing on Privacy Node",
+      label: "Tokenizing on Flare TEE",
       icon: Shield,
     },
     {

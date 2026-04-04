@@ -128,7 +128,7 @@ export default function DashboardPage() {
         const invoicesData = await invoicesRes.json();
         const listingsData = await listingsRes.json();
 
-        // Format Supabase invoices to match expected shape
+        // Format invoices from HCS to match expected shape
         const formatted = (invoicesData.invoices || []).map((inv: any) => ({
           id: inv.id,
           supplier: inv.supplier_name,
