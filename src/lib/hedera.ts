@@ -302,7 +302,7 @@ export async function getTokenInfo(tokenId: TokenId) {
     name: info.name,
     symbol: info.symbol,
     totalSupply: info.totalSupply.toString(),
-    maxSupply: info.maxSupply.toString(),
+    maxSupply: info.maxSupply?.toString() || "0",
     treasury: info.treasuryAccountId?.toString(),
   };
 }
