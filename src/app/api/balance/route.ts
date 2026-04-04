@@ -2,7 +2,7 @@ import { createPublicClient, http, formatEther } from "viem";
 import { NextRequest, NextResponse } from "next/server";
 
 const client = createPublicClient({
-  transport: http(process.env.FLARE_RPC_URL || "https://coston2-api.flare.network/ext/C/rpc"),
+  transport: http(process.env.HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"),
 });
 
 export async function GET(req: NextRequest) {
