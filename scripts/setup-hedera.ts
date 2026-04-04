@@ -59,7 +59,7 @@ async function main() {
   // Create Attestation NFT collection
   console.log("\nCreating 'Invoice Attestations' NFT collection...");
   const attTx = await new TokenCreateTransaction()
-    .setTokenName("Hedsup Invoice Attestations")
+    .setTokenName("Finvoice Invoice Attestations")
     .setTokenSymbol("RATTEST")
     .setTokenType(TokenType.NonFungibleUnique)
     .setSupplyType(TokenSupplyType.Finite)
@@ -81,7 +81,7 @@ async function main() {
   // Create Receipt NFT collection
   console.log("\nCreating 'Invoice Receipts' NFT collection...");
   const recTx = await new TokenCreateTransaction()
-    .setTokenName("Hedsup Invoice Receipts")
+    .setTokenName("Finvoice Invoice Receipts")
     .setTokenSymbol("RRECEIPT")
     .setTokenType(TokenType.NonFungibleUnique)
     .setSupplyType(TokenSupplyType.Finite)

@@ -45,8 +45,8 @@ export async function dynamicSendEmailOtp(email: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       to: email,
-      subject: `Hedsup — Your verification code is ${code}`,
-      body: `Your Hedsup invoice approval code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\n— Hedsup`,
+      subject: `Finvoice — Your verification code is ${code}`,
+      body: `Your Finvoice invoice approval code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\n— Finvoice`,
     }),
   });
   if (!res.ok) {
@@ -78,7 +78,7 @@ export async function dynamicVerifyEmailOtp(
 
   // Return a signed session token
   const token = crypto
-    .createHmac("sha256", process.env.DYNAMIC_AUTH_TOKEN ?? "hedsup-secret")
+    .createHmac("sha256", process.env.DYNAMIC_AUTH_TOKEN ?? "finvoice-secret")
     .update(`${email}:${Date.now()}`)
     .digest("hex");
 

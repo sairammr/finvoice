@@ -755,7 +755,7 @@ export default function Home() {
           >
             <CheckCircle className="w-8 h-8 text-lime-600 mx-auto mb-4" />
             <h3 className="font-heading text-3xl mb-3">
-              Hedsup fixes all three
+              Finvoice fixes all three
             </h3>
             <p className="text-muted-foreground text-lg max-w-lg mx-auto">
               Debtor-approved invoices. AI-scored risk on a sovereign Privacy

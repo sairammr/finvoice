@@ -157,7 +157,7 @@ function info(msg: string) { console.log(`  → ${msg}`); }
 
 async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║  HEDSUP TEE EXTENSION REGISTRATION — Flare Coston2     ║");
+  console.log("║  FINVOICE TEE EXTENSION REGISTRATION — Flare Coston2     ║");
   console.log("╚══════════════════════════════════════════════════════════╝\n");
 
   console.log(`  Account: ${account.address}`);

@@ -1,4 +1,4 @@
--- Hedsup: Supabase schema for invoice factoring platform
+-- Finvoice: Supabase schema for invoice factoring platform
 -- Migrated to Flare TEE + Hedera HTS architecture
 -- Run this in the Supabase SQL Editor to set up the database.
 

@@ -1,8 +1,8 @@
-# Hedsup End-to-End Implementation Design
+# Finvoice End-to-End Implementation Design
 
 ## Overview
 
-Wire the existing Hedsup UI prototype to real smart contracts, AI scoring, and blockchain reads/writes. The app has a complete frontend and 3 Solidity contracts — this spec covers deploying, configuring, and connecting everything.
+Wire the existing Finvoice UI prototype to real smart contracts, AI scoring, and blockchain reads/writes. The app has a complete frontend and 3 Solidity contracts — this spec covers deploying, configuring, and connecting everything.
 
 ## Architecture
 

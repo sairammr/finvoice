@@ -1,8 +1,8 @@
-# Hedsup.Finance
+# Finvoice
 
 **Private invoice factoring on Flare** -- tokenize invoices, get AI credit scores, and fund them on a public marketplace, all while keeping debtor identities completely private.
 
-Hedsup bridges TradFi and DeFi using the Flare dual-chain architecture (Privacy Node + Public L1). Suppliers create invoices, debtors approve them via a special PDF (no wallet needed), an AI agent scores the risk, and funders earn yield on a public marketplace -- without ever seeing who the debtor is.
+Finvoice bridges TradFi and DeFi using the Flare dual-chain architecture (Privacy Node + Public L1). Suppliers create invoices, debtors approve them via a special PDF (no wallet needed), an AI agent scores the risk, and funders earn yield on a public marketplace -- without ever seeing who the debtor is.
 
 
 <img width="1466" height="965" alt="Screenshot 2026-03-29 at 4 16 59 PM" src="https://github.com/user-attachments/assets/00ad5de1-fc31-43b8-9e67-98c93a928cab" />
@@ -25,7 +25,7 @@ Hedsup bridges TradFi and DeFi using the Flare dual-chain architecture (Privacy 
 | Face value          | Yes          | Yes       | Funders need to know amount        |
 | Confidence score    | Generated    | Yes       | Trust signal                       |
 
-> An institution's supplier relationships are trade secrets. With Hedsup, the AI sees everything, the public sees only what matters for pricing, and the debtor's identity never leaves the sovereign chain.
+> An institution's supplier relationships are trade secrets. With Finvoice, the AI sees everything, the public sees only what matters for pricing, and the debtor's identity never leaves the sovereign chain.
 
 <img width="1369" height="923" alt="Screenshot 2026-03-29 at 4 17 33 PM" src="https://github.com/user-attachments/assets/0f6d9d9c-1c42-4b93-b966-c414285a0178" />
 
@@ -87,7 +87,7 @@ INVOICE_TOKEN_ADDRESS=
 INVOICE_MARKETPLACE_ADDRESS=
 INVOICE_RECEIPT_ADDRESS=
 MOCK_USDC_ADDRESS=
-HEDSUP_USDC_ADDRESS=
+FINVOICE_USDC_ADDRESS=
 STABLECOIN_MIRROR_ADDRESS=
 
 # AI Scoring

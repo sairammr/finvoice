@@ -1,6 +1,6 @@
 {
-  "name": "Hedsup - Private Invoice Factoring",
-  "short_name": "Hedsup",
+  "name": "Finvoice - Private Invoice Factoring",
+  "short_name": "Finvoice",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#a3e635",

@@ -1,4 +1,4 @@
-# Hedsup E2E Test Report
+# Finvoice E2E Test Report
 
 **Date:** 2026-04-04T17:42:04.473Z
 **Invoice:** `INV-E2E-1775324511832`
@@ -108,7 +108,7 @@
 {
   "_id": "69d14d603d1aa65efbe13412",
   "id": "INV-E2E-1775324511832",
-  "supplier_name": "Hedsup Test Corp",
+  "supplier_name": "Finvoice Test Corp",
   "supplier_address": "0x4e9Ff472Ce73a46b91E42f06B940F34F1BDBb83f",
   "debtor_name": "Confidential Debtor Inc",
   "debtor_email": "secret@debtor.com",

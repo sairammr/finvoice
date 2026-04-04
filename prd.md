@@ -1,4 +1,4 @@
-# hedsup -- Deep Dive
+# finvoice -- Deep Dive
 
 > **Track:** RWA Tokenization | **Risk:** Medium | **Team:** 3-4 | **Duration:** 48 hours
 > **One-liner:** Private invoice factoring where suppliers create invoices on our platform, debtors approve them via a special PDF, an AI agent scores them confidentially on a sovereign chain, and funders earn yield purchasing them on a public marketplace.
@@ -94,7 +94,7 @@ WEB APP                  PRIVATE (Flare TEE)         PUBLIC (Hedera HTS)
 - Settlement requires manual claim transactions
 - **Problem:** No debtor consent, no trust signal, and nobody in TradFi will use the UX.
 
-### Our approach (Hedsup)
+### Our approach (Finvoice)
 - Supplier creates the invoice on our web app -- familiar form, no wallet needed
 - Platform generates a special PDF with an "Approve on Flare" button
 - Debtor receives the PDF, verifies the details, clicks "Approve" -- this IS debtor consent
@@ -365,7 +365,7 @@ Marketplace listing live -> Funders can now browse and fund
 
 ## Disclosure Design (Key Judging Criterion)
 
-This is where hedsup shines. The private-to-public split is not arbitrary -- it mirrors real institutional logic:
+This is where finvoice shines. The private-to-public split is not arbitrary -- it mirrors real institutional logic:
 
 | Data Point | Private (Privacy Node) | Public (L1) | Why |
 | ---------- | ---------------------- | ----------- | --- |
@@ -382,7 +382,7 @@ This is where hedsup shines. The private-to-public split is not arbitrary -- it 
 | AI confidence | No (derived by AI) | Yes | Trust signal for funders |
 | Original PDF hash | Yes | Yes | Verification that the receipt maps to a real document |
 
-**The narrative for judges:** "An institution's supplier relationships are trade secrets. Today, factoring an invoice means handing over your client list to a third party. With hedsup, the AI sees everything, the public sees only what matters for pricing, and the debtor's identity never leaves the sovereign chain."
+**The narrative for judges:** "An institution's supplier relationships are trade secrets. Today, factoring an invoice means handing over your client list to a third party. With finvoice, the AI sees everything, the public sees only what matters for pricing, and the debtor's identity never leaves the sovereign chain."
 
 ---
 
@@ -886,4 +886,4 @@ The scope is tight and achievable. The "wow moment" (debtor clicking "Approve on
 
 ---
 
-*hedsup -- Where one click in a PDF unlocks a three trillion dollar market.*
+*finvoice -- Where one click in a PDF unlocks a three trillion dollar market.*

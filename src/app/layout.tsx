@@ -22,11 +22,11 @@ const embedImage = {
   url: "/banner.png",
   width: 2856,
   height: 1774,
-  alt: "Hedsup — Turn unpaid invoices into instant capital",
+  alt: "Finvoice — Turn unpaid invoices into instant capital",
 } as const;
 
 export const metadata: Metadata = {
-  title: "Hedsup - Private Invoice Factoring on Flare + Hedera",
+  title: "Finvoice - Private Invoice Factoring on Flare + Hedera",
   description:
     "One click turns invoices into yield. Suppliers create invoices, debtors approve via PDF, AI scores them on a sovereign chain, and funders earn yield on a public marketplace. Private data never leaks.",
   manifest: "/site.webmanifest",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
-    title: "Hedsup - Private Invoice Factoring on Flare + Hedera",
+    title: "Finvoice - Private Invoice Factoring on Flare + Hedera",
     description:
       "One click turns invoices into yield. Private invoice factoring with AI risk scoring on sovereign chains.",
     images: [embedImage],
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Hedsup - Private Invoice Factoring on Flare + Hedera",
+    title: "Finvoice - Private Invoice Factoring on Flare + Hedera",
     description:
       "One click turns invoices into yield. Private data never leaks.",
     images: [embedImage],

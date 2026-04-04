@@ -18,7 +18,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { writeFileSync } from "fs";
 
 const MONGODB_URI = process.env.MONGODB_URI!;
-const DB_NAME = process.env.MONGODB_DB || "hedsup";
+const DB_NAME = process.env.MONGODB_DB || "finvoice";
 
 const coston2 = defineChain({
   id: 114, name: "Coston2",
@@ -58,7 +58,7 @@ const report: any = { txs: {}, hedera: {}, mongo: {}, balances: {} };
 
 async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║  HEDSUP FULL E2E — REPORT RUN                          ║");
+  console.log("║  FINVOICE FULL E2E — REPORT RUN                          ║");
   console.log("╚══════════════════════════════════════════════════════════╝");
 
   const mongo = new MongoClient(MONGODB_URI);
@@ -83,7 +83,7 @@ async function main() {
   const invoiceId = `INV-E2E-${Date.now()}`;
   const privateData = {
     invoiceId,
-    supplierName: "Hedsup Test Corp",
+    supplierName: "Finvoice Test Corp",
     supplierAddress: flareAccount.address,
     debtorName: "Confidential Debtor Inc",
     debtorEmail: "secret@debtor.com",
@@ -298,7 +298,7 @@ async function main() {
   const flareExplorerTx = (hash: string) => `https://coston2-explorer.flare.network/tx/${hash}`;
   const flareExplorerAddr = (addr: string) => `https://coston2-explorer.flare.network/address/${addr}`;
 
-  const md = `# Hedsup E2E Test Report
+  const md = `# Finvoice E2E Test Report
 
 **Date:** ${new Date().toISOString()}
 **Invoice:** \`${invoiceId}\`

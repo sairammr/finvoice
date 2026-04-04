@@ -5,8 +5,8 @@ import { Version } from "./app/config.js";
 const EXTENSION_PORT = process.env.EXTENSION_PORT || "8883";
 const SIGN_PORT = process.env.SIGN_PORT || "8882";
 
-console.log(`[hedsup-tee] Starting invoice factoring TEE extension v${Version}`);
-console.log(`[hedsup-tee] Extension port: ${EXTENSION_PORT}, Sign port: ${SIGN_PORT}`);
+console.log(`[finvoice-tee] Starting invoice factoring TEE extension v${Version}`);
+console.log(`[finvoice-tee] Extension port: ${EXTENSION_PORT}, Sign port: ${SIGN_PORT}`);
 
 const srv = new Server(EXTENSION_PORT, SIGN_PORT, Version, register, reportState);
 srv.listenAndServe();

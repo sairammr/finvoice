@@ -1,4 +1,4 @@
-# Hedsup - Private Invoice Factoring on Flare + Hedera
+# Finvoice - Private Invoice Factoring on Flare + Hedera
 
 ## Project Context
 

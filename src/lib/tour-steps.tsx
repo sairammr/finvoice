@@ -19,7 +19,7 @@ export const tours: Tour[] = [
       /* ── 1. Welcome ── */
       {
         icon: <Hand className={iconClass} aria-hidden />,
-        title: "Welcome to Hedsup",
+        title: "Welcome to Finvoice",
         content:
           "Private invoice factoring on Flare. Suppliers create invoices and borrow against them for instant liquidity — funders earn fixed yield on real-world receivables. Let's walk through it.",
         side: "bottom",

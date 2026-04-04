@@ -38,7 +38,7 @@ export function Logo({ className }: LogoProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.12, ease: "easeOut" }}
           variants={{ hover: { x: 1 } }}
-          aria-label="Hedsup"
+          aria-label="Finvoice"
         >
           heds
           <motion.span

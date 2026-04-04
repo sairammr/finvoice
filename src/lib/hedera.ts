@@ -42,7 +42,7 @@ export const treasuryId = AccountId.fromString(
 
 export async function createAttestationCollection(): Promise<string> {
   const tx = await new TokenCreateTransaction()
-    .setTokenName("Hedsup Invoice Attestations")
+    .setTokenName("Finvoice Invoice Attestations")
     .setTokenSymbol("RATTEST")
     .setTokenType(TokenType.NonFungibleUnique)
     .setSupplyType(TokenSupplyType.Finite)
@@ -63,7 +63,7 @@ export async function createAttestationCollection(): Promise<string> {
 
 export async function createReceiptCollection(): Promise<string> {
   const tx = await new TokenCreateTransaction()
-    .setTokenName("Hedsup Invoice Receipts")
+    .setTokenName("Finvoice Invoice Receipts")
     .setTokenSymbol("RRECEIPT")
     .setTokenType(TokenType.NonFungibleUnique)
     .setSupplyType(TokenSupplyType.Finite)

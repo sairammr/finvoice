@@ -73,7 +73,7 @@ function fail(msg: string) { console.log(`  ✗ ${msg}`); }
 // ── Main test ──
 async function main() {
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║  HEDSUP END-TO-END TEST: Flare TEE + Hedera HTS       ║");
+  console.log("║  FINVOICE END-TO-END TEST: Flare TEE + Hedera HTS       ║");
   console.log("╚══════════════════════════════════════════════════════════╝");
 
   // ── Step 0: Check balances ──

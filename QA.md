@@ -1,4 +1,4 @@
-# hedsup — Hackathon Q&A Prep
+# finvoice — Hackathon Q&A Prep
 
 Questions judges, sponsors, or technical reviewers might ask during your presentation. Answers align with [`prd.md`](prd.md).
 

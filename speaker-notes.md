@@ -1,4 +1,4 @@
-# Hedsup.Finance — Speaker Notes
+# Finvoice — Speaker Notes
 
 > **Total pitch time: 3 minutes** (excludes the 2-min live demo)
 > Pacing guide: ~15–20 seconds per slide for most slides; linger on Problem, Solution, and Yield.
@@ -7,7 +7,7 @@
 
 ## Slide 0 — Title (~15s)
 
-"This is **Hedsup.Finance** — one click turns invoices into yield.
+"This is **Finvoice** — one click turns invoices into yield.
 
 We sit at the intersection of RWA tokenization, Flare privacy, and AI scoring — targeting a **$3.1 trillion** global factoring market."
 
@@ -30,7 +30,7 @@ This $3.1 trillion market still runs on faxed PDFs and blind trust."
 
 ## Slide 2 — The Solution (~25s)
 
-"**Hedsup.Finance** unlocks a new economy where private assets meet public liquidity, powered by AI agents on Flare.
+"**Finvoice** unlocks a new economy where private assets meet public liquidity, powered by AI agents on Flare.
 
 Invoices live on a **private chain** — debtor identities and payment history never leave. An AI agent scores credit risk and bridges only what matters — risk grade, yield, confidence — to a **public marketplace** where anyone can fund invoices.
 
@@ -83,7 +83,7 @@ This isn't another generic lending pool. Privacy plus programmability is our wed
 
 "Where does the yield come from? The **discount is the yield**.
 
-A supplier has a $100k invoice and needs cash now. They list it on Hedsup. A funder buys it at a discount — say $97,900. At maturity, the debtor pays the full $100k. The spread — $2,100 over 30 days — annualizes to **26.1% APY**.
+A supplier has a $100k invoice and needs cash now. They list it on Finvoice. A funder buys it at a discount — say $97,900. At maturity, the debtor pays the full $100k. The spread — $2,100 over 30 days — annualizes to **26.1% APY**.
 
 Real invoices, real payments, real yield. No token emissions, no ponzinomics. Platform takes **0.3% at settlement**."
 
@@ -111,9 +111,9 @@ This proves **debtor consent**, **privacy preservation**, **sub-second finality*
 
 ---
 
-## Slide 10 — Why Hedsup (~15s)
+## Slide 10 — Why Finvoice (~15s)
 
-"Quick competitive snapshot. Hedsup is the only platform that checks every box:
+"Quick competitive snapshot. Finvoice is the only platform that checks every box:
 
 - **Debtor consent** — neither traditional factoring nor other DeFi protocols require it.
 - **Privacy** — traditional keeps it, DeFi doesn't, we do.
