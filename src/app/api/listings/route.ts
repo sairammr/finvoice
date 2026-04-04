@@ -13,10 +13,8 @@ export async function GET() {
     const faceValue = Number(inv.face_value);
     const purchasePrice = faceValue - (faceValue * discountBps) / 10000;
 
-    const maturityDate = new Date(inv.due_date || Date.now() + 30 * 86400000);
-    const tenure = isNaN(maturityDate.getTime())
-      ? 30
-      : Math.max(1, Math.ceil((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    const maturityDate = new Date(inv.due_date);
+    const tenure = Math.max(1, Math.ceil((maturityDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
     const attestationHash = hashString(
       `${inv.id}-${inv.risk_grade || "B"}-${discountBps}-${inv.confidence_score || 80}`
@@ -33,17 +31,14 @@ export async function GET() {
       purchasePrice,
       purchasePriceRaw: String(Math.round(purchasePrice * 1e6)),
       faceValueRaw: String(Math.round(faceValue * 1e6)),
-      maturityDate: isNaN(maturityDate.getTime()) ? new Date(Date.now() + 30 * 86400000).toISOString() : maturityDate.toISOString(),
+      maturityDate: maturityDate.toISOString(),
       tenure,
       confidenceScore: inv.confidence_score || 80,
       attestationHash,
-      supplierAddress: inv.supplier_address || null,
       txHash: inv.flare_tx_hash || null,
       pdfHash: inv.pdf_hash,
       listedAt: inv.created_at,
-      status: inv.status,
       funded: inv.status === "funded" || inv.status === "settled",
-      settled: inv.status === "settled",
       funder: inv.funder_hedera_id || null,
       attestation: inv.hedera_attestation_serial
         ? { hederaSerial: inv.hedera_attestation_serial, network: process.env.NEXT_PUBLIC_HEDERA_NETWORK || "testnet", verified: true }
