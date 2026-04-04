@@ -873,36 +873,13 @@ export default function MarketplacePage() {
     setFundError(null);
 
     try {
-      const wallet = wallets[0];
-      const provider = await wallet.getEthereumProvider();
-      const supplierAddress = (selectedListing as any).supplierAddress;
-
-      if (!supplierAddress) {
-        setFundError("Supplier wallet address not found");
-        setFunding(false);
-        return;
-      }
-
-      // Step 1: Send HBAR from funder's wallet to invoice creator's wallet
-      const amountInWei = BigInt(Math.round(selectedListing.purchasePrice * 1e18));
-      const txHash = await provider.request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: walletAddress,
-          to: supplierAddress,
-          value: "0x" + amountInWei.toString(16),
-          gas: "0x" + BigInt(300000).toString(16),
-        }],
-      });
-
-      // Step 2: Submit tx hash to backend for verification + receipt NFT mint
+      // Fund via backend API (Hedera HTS)
       const res = await fetch("/api/fund", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           invoiceId: selectedListing.invoiceId,
-          funderAddress: walletAddress,
-          txHash,
+          funderHederaId: walletAddress || "0.0.0",
         }),
       });
 
@@ -920,15 +897,13 @@ export default function MarketplacePage() {
         setFundDialogOpen(false);
         setSelectedListing(null);
       } else {
-        setFundError(result.error || "Funding failed. Please try again.");
+        setFundError(
+          "Transaction sent but not confirmed yet. Check your wallet.",
+        );
       }
     } catch (err: any) {
       console.error("Fund failed:", err);
-      if (err?.code === 4001 || err?.message?.includes("rejected")) {
-        setFundError("Transaction rejected by wallet");
-      } else {
-        setFundError(err?.message || "Transaction failed");
-      }
+      setFundError(err?.message || "Transaction failed");
     } finally {
       setFunding(false);
     }
@@ -1563,7 +1538,7 @@ export default function MarketplacePage() {
                       </div>
                       {walletBalance !== null && (
                         <span className="text-xs font-medium text-gray-700">
-                          {parseFloat(walletBalance).toFixed(2)} HBAR
+                          {parseFloat(walletBalance).toFixed(2)} USDr
                         </span>
                       )}
                     </div>
@@ -1572,7 +1547,7 @@ export default function MarketplacePage() {
                   {insufficientBalance && (
                     <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                       <AlertTriangle className="size-3.5 shrink-0" />
-                      Insufficient HBAR balance. Fund your wallet from the
+                      Insufficient USDr balance. Fund your wallet from the
                       faucet first.
                     </div>
                   )}
@@ -1669,10 +1644,10 @@ export default function MarketplacePage() {
                 {funding ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin" />
-                    Sending HBAR...
+                    Confirm in wallet...
                   </>
                 ) : (
-                  `Send & Fund ${selectedListing ? formatCurrency(selectedListing.purchasePrice) : ""}`
+                  `Fund ${selectedListing ? formatCurrency(selectedListing.purchasePrice) : ""}`
                 )}
               </Button>
             )}
