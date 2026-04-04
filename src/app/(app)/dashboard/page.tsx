@@ -9,7 +9,7 @@ import {
   getRiskGradeColor,
 } from "@/lib/data";
 import { useRole } from "@/components/providers";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import {
   Card,
   CardContent,
@@ -105,7 +105,6 @@ function StatCard({
 export default function DashboardPage() {
   const { role } = useRole();
   const { user } = usePrivy();
-  const { wallets } = useWallets();
   const walletAddress = user?.wallet?.address ?? "";
 
   const [apiInvoices, setApiInvoices] = useState<any[]>([]);
@@ -170,9 +169,7 @@ export default function DashboardPage() {
   const listedCount = displayInvoices.filter(
     (i: any) => i.status === "listed",
   ).length;
-  const fundedListings = displayListings.filter(
-    (l: any) => l.funded && l.funder && walletAddress && l.funder.toLowerCase() === walletAddress.toLowerCase(),
-  );
+  const fundedListings = displayListings.filter((l: any) => l.funded);
   const totalReceived = fundedListings.reduce(
     (sum, l) => sum + l.purchasePrice,
     0,
@@ -196,48 +193,24 @@ export default function DashboardPage() {
         fundedListings.length
       : 0;
 
-  // Find the matching listing for an invoice
+  // Find the matching listing for an invoice (by tokenId)
   function getListingForInvoice(inv: any) {
     return displayListings.find(
-      (l: any) => l.invoiceId === inv.id,
+      (l: any) => String(l.tokenId) === String(inv.tokenId),
     );
   }
 
   async function handleSettle(inv: any) {
     const listing = getListingForInvoice(inv);
-    if (!listing || !wallets[0] || !walletAddress) return;
+    if (!listing) return;
     setSettlingId(inv.id);
     try {
-      const wallet = wallets[0];
-      const provider = await wallet.getEthereumProvider();
-      const funderAddress = listing.funder;
-
-      if (!funderAddress) {
-        alert("Funder address not found");
-        setSettlingId(null);
-        return;
-      }
-
-      // Send face value HBAR from debtor/supplier wallet to funder wallet
-      const amountInWei = BigInt(Math.round(Number(inv.amount) * 1e18));
-      const txHash = await provider.request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: walletAddress,
-          to: funderAddress,
-          value: "0x" + amountInWei.toString(16),
-          gas: "0x" + BigInt(300000).toString(16),
-        }],
-      });
-
-      // Submit tx to backend for verification + receipt NFT burn
       const res = await fetch("/api/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          listingId: listing.id.replace("LST-", ""),
           invoiceId: inv.id,
-          txHash,
-          settlerAddress: walletAddress,
         }),
       });
       const data = await res.json();
@@ -249,11 +222,7 @@ export default function DashboardPage() {
       }
     } catch (err: any) {
       console.error("Settle request failed:", err);
-      if (err?.code === 4001 || err?.message?.includes("rejected")) {
-        alert("Transaction rejected by wallet");
-      } else {
-        alert("Settlement failed: " + (err?.message || "Unknown error"));
-      }
+      alert("Settlement request failed");
     } finally {
       setSettlingId(null);
     }
@@ -608,12 +577,9 @@ export default function DashboardPage() {
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className={listing.settled
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-300 text-xs"
-                                : "bg-green-100 text-green-700 border-green-300 text-xs"
-                              }
+                              className="bg-green-100 text-green-700 border-green-300 text-xs"
                             >
-                              {listing.settled ? "Settled" : "Awaiting Settlement"}
+                              Awaiting Settlement
                             </Badge>
                           </TableCell>
                         </TableRow>
