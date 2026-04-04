@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useDynamicContext, useUserWallets } from "@dynamic-labs/sdk-react-core";
 import { useNextStep } from "nextstepjs";
 import {
   FileText,
@@ -72,11 +72,13 @@ function formatBalance(raw: string): string {
 export function Navbar() {
   const pathname = usePathname();
   const { role, setRole } = useRole();
-  const { ready, authenticated, user, login, logout } = usePrivy();
-  const { wallets } = useWallets();
+  const { sdkHasLoaded, primaryWallet, handleLogOut, setShowAuthFlow } = useDynamicContext();
+  const userWallets = useUserWallets();
   const { startNextStep } = useNextStep();
 
-  const walletAddress = user?.wallet?.address;
+  const ready = sdkHasLoaded;
+  const authenticated = !!primaryWallet;
+  const walletAddress = primaryWallet?.address;
 
   const [balanceFormatted, setBalanceFormatted] = useState<string | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
@@ -88,57 +90,38 @@ export function Navbar() {
 
   // Switch wallet to Hedera Testnet on connect
   useEffect(() => {
-    if (!authenticated || wallets.length === 0) return;
+    if (!authenticated || !primaryWallet) return;
 
     async function switchChain() {
-      const wallet = wallets[0];
-      if (!wallet) return;
-
       try {
-        await wallet.switchChain(HEDERA_TESTNET_CHAIN_ID);
-      } catch {
-        try {
-          const provider = await wallet.getEthereumProvider();
-          await provider.request({
-            method: "wallet_addEthereumChain",
-            params: [
-              {
-                chainId: `0x${HEDERA_TESTNET_CHAIN_ID.toString(16)}`,
-                chainName: "Hedera Testnet",
-                nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
-                rpcUrls: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"],
-                blockExplorerUrls: ["https://hashscan.io/testnet"],
-              },
-            ],
-          });
-        } catch (addErr) {
-          console.error("Failed to add Hedera chain:", addErr);
+        const connector = primaryWallet!.connector;
+        if (connector && typeof connector.switchNetwork === "function") {
+          await connector.switchNetwork({ networkChainId: HEDERA_TESTNET_CHAIN_ID });
         }
+      } catch (err) {
+        console.error("Failed to switch to Hedera chain:", err);
       }
     }
 
     switchChain();
-  }, [authenticated, wallets]);
+  }, [authenticated, primaryWallet]);
 
-  // Fetch HBAR balance directly from wallet provider
+  // Fetch HBAR balance via server-side API route
   const fetchBalance = useCallback(async () => {
-    if (!walletAddress || wallets.length === 0) return;
+    if (!walletAddress) return;
     setIsLoadingBalance(true);
     try {
-      const provider = await wallets[0].getEthereumProvider();
-      const balanceHex = await provider.request({
-        method: "eth_getBalance",
-        params: [walletAddress, "latest"],
-      });
-      const balanceWei = BigInt(balanceHex as string);
-      const formatted = (Number(balanceWei) / 1e18).toString();
-      setBalanceFormatted(formatted);
+      const res = await fetch(`/api/balance?address=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBalanceFormatted(data.formatted);
+      }
     } catch {
       setBalanceFormatted(null);
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [walletAddress, wallets]);
+  }, [walletAddress]);
 
   useEffect(() => {
     if (!walletAddress) {
@@ -150,8 +133,7 @@ export function Navbar() {
 
   // Fund wallet: SIWE auth with faucet + claim
   const handleFundWallet = useCallback(async () => {
-    const wallet = wallets[0];
-    if (!wallet || !walletAddress || isFunding) return;
+    if (!primaryWallet || !walletAddress || isFunding) return;
 
     setIsFunding(true);
     setFundStatus("idle");
@@ -169,13 +151,11 @@ export function Navbar() {
 
       const { message, session } = prepData;
 
-      // Step 2: Sign the SIWE message with the connected wallet
+      // Step 2: Sign the SIWE message with the connected wallet via Dynamic
       setFundStatus("signing");
-      const provider = await wallet.getEthereumProvider();
-      const signature = await provider.request({
-        method: "personal_sign",
-        params: [message, walletAddress],
-      });
+      const connector = primaryWallet.connector;
+      const signer = await (connector as any).getSigner();
+      const signature = await signer.signMessage(message);
 
       // Step 3: Claim — verify signature + request faucet funds
       setFundStatus("claiming");
@@ -204,7 +184,7 @@ export function Navbar() {
     } finally {
       setIsFunding(false);
     }
-  }, [wallets, walletAddress, isFunding, fetchBalance]);
+  }, [primaryWallet, walletAddress, isFunding, fetchBalance]);
 
   const isZeroBalance =
     balanceFormatted !== null && parseFloat(balanceFormatted) === 0;
@@ -403,7 +383,7 @@ export function Navbar() {
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => logout()}
+                      onClick={() => handleLogOut()}
                       className="text-red-600"
                     >
                       <LogOut className="mr-2 size-4" />
@@ -415,7 +395,7 @@ export function Navbar() {
             </div>
           ) : ready ? (
             <Button
-              onClick={() => login()}
+              onClick={() => setShowAuthFlow(true)}
               size="sm"
               className="gap-1.5 bg-lime-400 text-lime-950 hover:bg-lime-500"
             >

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { PrivyProvider } from "@privy-io/react-auth";
+import { DynamicContextProvider } from "@dynamic-labs/sdk-react-core";
+import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import { NextStepProvider, NextStep } from "nextstepjs";
 import { TourCard } from "@/components/tour-card";
 import { tours } from "@/lib/tour-steps";
-import { defineChain } from "viem";
 
 export type Role = "supplier" | "debtor" | "funder";
 
@@ -24,42 +24,36 @@ export function useRole() {
   return context;
 }
 
-// Hedera Testnet chain definition for Privy
-const hederaTestnet = defineChain({
-  id: 296,
+// Hedera Testnet network definition for Dynamic
+const hederaTestnetNetwork = {
+  blockExplorerUrls: ["https://hashscan.io/testnet"],
+  chainId: 296,
+  chainName: "Hedera Testnet",
+  iconUrls: [],
   name: "Hedera Testnet",
-  network: "hedera-testnet",
   nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
-  rpcUrls: {
-    default: { http: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"] },
-  },
-  blockExplorers: {
-    default: {
-      name: "HashScan",
-      url: "https://hashscan.io/testnet",
-    },
-  },
-});
+  networkId: 296,
+  rpcUrls: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"],
+  vanityName: "Hedera Testnet",
+};
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role>("supplier");
 
   return (
-    <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ""}
-      config={{
-        appearance: {
-          theme: "light",
-          accentColor: "#a3e635",
-          logo: undefined,
-          walletChainType: "ethereum-only",
+    <DynamicContextProvider
+      settings={{
+        environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID || "",
+        walletConnectors: [EthereumWalletConnectors],
+        overrides: {
+          evmNetworks: [hederaTestnetNetwork],
         },
-        loginMethods: ["wallet", "email", "google"],
-        defaultChain: hederaTestnet,
-        supportedChains: [hederaTestnet],
-        embeddedWallets: {
-          ethereum: {
-            createOnLogin: "users-without-wallets",
+        events: {
+          onAuthSuccess: () => {
+            console.log("[Dynamic] Auth success");
+          },
+          onLogout: () => {
+            console.log("[Dynamic] Logged out");
           },
         },
       }}
@@ -71,6 +65,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </NextStep>
         </NextStepProvider>
       </RoleContext.Provider>
-    </PrivyProvider>
+    </DynamicContextProvider>
   );
 }
