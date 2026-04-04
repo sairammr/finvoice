@@ -203,8 +203,8 @@ function InvoicePDF({ invoice }: { invoice: any }) {
         <View style={s.headerBand}>
           <View>
             <View style={s.logoMark}>
-              <Text style={s.logoHeds}>heds</Text>
-              <Text style={s.logoUp}>up</Text>
+              <Text style={s.logoHeds}>F</Text>
+              <Text style={s.logoUp}>invoice</Text>
             </View>
             <Text style={s.logoSub}>Private Invoice Factoring</Text>
           </View>
