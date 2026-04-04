@@ -9,7 +9,7 @@ import {
   getRiskGradeColor,
 } from "@/lib/data";
 import { useRole } from "@/components/providers";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   Card,
   CardContent,
@@ -105,6 +105,7 @@ function StatCard({
 export default function DashboardPage() {
   const { role } = useRole();
   const { user } = usePrivy();
+  const { wallets } = useWallets();
   const walletAddress = user?.wallet?.address ?? "";
 
   const [apiInvoices, setApiInvoices] = useState<any[]>([]);
@@ -195,24 +196,48 @@ export default function DashboardPage() {
         fundedListings.length
       : 0;
 
-  // Find the matching listing for an invoice (by tokenId)
+  // Find the matching listing for an invoice
   function getListingForInvoice(inv: any) {
     return displayListings.find(
-      (l: any) => String(l.tokenId) === String(inv.tokenId),
+      (l: any) => l.invoiceId === inv.id,
     );
   }
 
   async function handleSettle(inv: any) {
     const listing = getListingForInvoice(inv);
-    if (!listing) return;
+    if (!listing || !wallets[0] || !walletAddress) return;
     setSettlingId(inv.id);
     try {
+      const wallet = wallets[0];
+      const provider = await wallet.getEthereumProvider();
+      const funderAddress = listing.funder;
+
+      if (!funderAddress) {
+        alert("Funder address not found");
+        setSettlingId(null);
+        return;
+      }
+
+      // Send face value HBAR from debtor/supplier wallet to funder wallet
+      const amountInWei = BigInt(Math.round(Number(inv.amount) * 1e18));
+      const txHash = await provider.request({
+        method: "eth_sendTransaction",
+        params: [{
+          from: walletAddress,
+          to: funderAddress,
+          value: "0x" + amountInWei.toString(16),
+          gas: "0x" + BigInt(300000).toString(16),
+        }],
+      });
+
+      // Submit tx to backend for verification + receipt NFT burn
       const res = await fetch("/api/settle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          listingId: listing.id.replace("LST-", ""),
           invoiceId: inv.id,
+          txHash,
+          settlerAddress: walletAddress,
         }),
       });
       const data = await res.json();
@@ -224,7 +249,11 @@ export default function DashboardPage() {
       }
     } catch (err: any) {
       console.error("Settle request failed:", err);
-      alert("Settlement request failed");
+      if (err?.code === 4001 || err?.message?.includes("rejected")) {
+        alert("Transaction rejected by wallet");
+      } else {
+        alert("Settlement failed: " + (err?.message || "Unknown error"));
+      }
     } finally {
       setSettlingId(null);
     }
@@ -579,9 +608,12 @@ export default function DashboardPage() {
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className="bg-green-100 text-green-700 border-green-300 text-xs"
+                              className={listing.settled
+                                ? "bg-emerald-100 text-emerald-700 border-emerald-300 text-xs"
+                                : "bg-green-100 text-green-700 border-green-300 text-xs"
+                              }
                             >
-                              Awaiting Settlement
+                              {listing.settled ? "Settled" : "Awaiting Settlement"}
                             </Badge>
                           </TableCell>
                         </TableRow>

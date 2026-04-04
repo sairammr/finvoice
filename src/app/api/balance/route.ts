@@ -2,7 +2,7 @@ import { createPublicClient, http, formatEther } from "viem";
 import { NextRequest, NextResponse } from "next/server";
 
 const client = createPublicClient({
-  transport: http(process.env.HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"),
+  transport: http(process.env.NEXT_PUBLIC_HEDERA_RPC_URL  ?? "https://296.rpc.thirdweb.com"),
 });
 
 export async function GET(req: NextRequest) {

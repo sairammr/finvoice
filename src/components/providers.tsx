@@ -31,7 +31,7 @@ const hederaTestnet = defineChain({
   network: "hedera-testnet",
   nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
   rpcUrls: {
-    default: { http: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"] },
+    default: { http: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"] },
   },
   blockExplorers: {
     default: {
