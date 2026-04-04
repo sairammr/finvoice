@@ -169,7 +169,9 @@ export default function DashboardPage() {
   const listedCount = displayInvoices.filter(
     (i: any) => i.status === "listed",
   ).length;
-  const fundedListings = displayListings.filter((l: any) => l.funded);
+  const fundedListings = displayListings.filter(
+    (l: any) => l.funded && l.funder && walletAddress && l.funder.toLowerCase() === walletAddress.toLowerCase(),
+  );
   const totalReceived = fundedListings.reduce(
     (sum, l) => sum + l.purchasePrice,
     0,

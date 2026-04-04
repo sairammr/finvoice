@@ -37,6 +37,7 @@ export async function GET() {
       tenure,
       confidenceScore: inv.confidence_score || 80,
       attestationHash,
+      supplierAddress: inv.supplier_address || null,
       txHash: inv.flare_tx_hash || null,
       pdfHash: inv.pdf_hash,
       listedAt: inv.created_at,

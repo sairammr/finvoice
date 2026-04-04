@@ -24,19 +24,19 @@ export function useRole() {
   return context;
 }
 
-// Flare Coston2 Testnet chain definition for Privy
-const flareCoston2 = defineChain({
-  id: 114,
-  name: "Flare Testnet Coston2",
-  network: "coston2",
-  nativeCurrency: { name: "Coston2 Flare", symbol: "C2FLR", decimals: 18 },
+// Hedera Testnet chain definition for Privy
+const hederaTestnet = defineChain({
+  id: 296,
+  name: "Hedera Testnet",
+  network: "hedera-testnet",
+  nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
   rpcUrls: {
-    default: { http: ["https://coston2-api.flare.network/ext/C/rpc"] },
+    default: { http: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"] },
   },
   blockExplorers: {
     default: {
-      name: "Coston2 Explorer",
-      url: "https://coston2-explorer.flare.network",
+      name: "HashScan",
+      url: "https://hashscan.io/testnet",
     },
   },
 });
@@ -55,8 +55,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           walletChainType: "ethereum-only",
         },
         loginMethods: ["wallet", "email", "google"],
-        defaultChain: flareCoston2,
-        supportedChains: [flareCoston2],
+        defaultChain: hederaTestnet,
+        supportedChains: [hederaTestnet],
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",
