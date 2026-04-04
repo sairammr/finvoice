@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6383:6379"
+    tmpfs:
+      - /data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ext-proxy:
+    build:
+      context: ./proxy
+    volumes:
+      - ./config/proxy/extension_proxy.toml:/app/config/extension_proxy.toml:ro
+    environment:
+      - PRIVATE_KEY=${FLARE_PRIVATE_KEY}
+    ports:
+      - "6675:6663"  # internal
+      - "6676:6664"  # external (tunnel this)
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:6663/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  extension-tee:
+    build:
+      context: ./typescript
+    environment:
+      - INITIAL_OWNER=${INITIAL_OWNER}
+      - EXTENSION_ID=${EXTENSION_ID}
+      - PROXY_URL=http://ext-proxy:6663
+      - SIGN_PORT=8882
+      - EXTENSION_PORT=8883
+      - MODE=1
+    depends_on:
+      ext-proxy:
+        condition: service_healthy

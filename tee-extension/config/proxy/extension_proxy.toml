@@ -1,0 +1,25 @@
+# Flare TEE Extension Proxy Configuration (Coston2)
+# DB credentials: get from Flare team at hackathon booth or TG group
+# https://t.me/+KAp2qGOMywE3MGRh
+
+redis_port = "redis:6379"
+chain_id = 114
+private_key_variable = "PRIVATE_KEY"
+initial_signing_policy_offset = 3
+signing_policy_fetch_interval = "20s"
+
+[db]
+host = "35.233.36.8"
+port = 3306
+database = "indexer"
+username = "hackathon_user_8"
+password = "8Ed1ojFQa+ZrJqHYuGF1qQHs"
+
+[addresses]
+flare_systems_manager = "0xA90Db6D10F856799b10ef2A77EBCbF460aC71e52"
+relay = "0xa10B672D1c62e5457b17af63d4302add6A99d7dE"
+voter_registry = "0x6a0AF07b7972177B176d3D422555cbc98DfDe914"
+
+[ports]
+internal = "6663"
+external = "6664"
