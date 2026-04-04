@@ -734,3 +734,926 @@ function ScoringPopover({
 
 /* ── Main Page ── */
 
+export default function MarketplacePage() {
+  const [apiListings, setApiListings] = useState<MarketplaceListing[]>([]);
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [funding, setFunding] = useState(false);
+  const [fundError, setFundError] = useState<string | null>(null);
+  const [riskFilter, setRiskFilter] = useState<RiskFilter>("All");
+  const [hideFunded, setHideFunded] = useState(false);
+  const [sortBy, setSortBy] = useState<SortBy>("yield");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [fundDialogOpen, setFundDialogOpen] = useState(false);
+  const [selectedListing, setSelectedListing] =
+    useState<MarketplaceListing | null>(null);
+  const [recentlyFunded, setRecentlyFunded] = useState<Set<string>>(new Set());
+  const [walletBalance, setWalletBalance] = useState<string | null>(null);
+
+  const { ready, authenticated, login } = usePrivy();
+  const { wallets } = useWallets();
+  const walletAddress = wallets[0]?.address;
+
+  const fetchWalletBalance = useCallback(async () => {
+    if (!walletAddress) return;
+    try {
+      const res = await fetch(`/api/balance?address=${walletAddress}`);
+      if (res.ok) {
+        const data = await res.json();
+        setWalletBalance(data.formatted);
+      }
+    } catch {
+      setWalletBalance(null);
+    }
+  }, [walletAddress]);
+
+  useEffect(() => {
+    async function fetchListings() {
+      try {
+        const res = await fetch("/api/listings");
+        const data = await res.json();
+        if (data.listings) {
+          setApiListings(data.listings);
+        }
+      } catch {
+        // network error — show empty state
+      } finally {
+        setLoadingListings(false);
+      }
+    }
+    fetchListings();
+  }, []);
+
+  useEffect(() => {
+    if (fundDialogOpen && walletAddress) {
+      fetchWalletBalance();
+    }
+  }, [fundDialogOpen, walletAddress, fetchWalletBalance]);
+
+  function handleSort(key: SortBy) {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortBy(key);
+      setSortDir("desc");
+    }
+  }
+
+  const filteredAndSorted = useMemo(() => {
+    let result = [...apiListings];
+    if (riskFilter !== "All") {
+      result = result.filter((l) => l.riskGrade === riskFilter);
+    }
+    if (hideFunded) {
+      result = result.filter((l) => !l.funded && !recentlyFunded.has(l.id));
+    }
+    const dir = sortDir === "desc" ? -1 : 1;
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "yield":
+          return (a.discountBps - b.discountBps) * dir;
+        case "faceValue":
+          return (a.faceValue - b.faceValue) * dir;
+        case "tenure":
+          return (a.tenure - b.tenure) * dir;
+        case "riskGrade":
+          return (
+            ((riskGradeSort[a.riskGrade] || 5) -
+              (riskGradeSort[b.riskGrade] || 5)) *
+            dir
+          );
+        default:
+          return 0;
+      }
+    });
+    return result;
+  }, [apiListings, riskFilter, sortBy, sortDir, hideFunded, recentlyFunded]);
+
+  const stats = useMemo(() => {
+    const all = apiListings;
+    const unfunded = all.filter((l) => !l.funded);
+    const funded = all.filter((l) => l.funded);
+    const total = all.reduce((s, l) => s + l.faceValue, 0);
+    const available = unfunded.reduce((s, l) => s + l.faceValue, 0);
+    const avgDiscount =
+      all.length > 0
+        ? all.reduce((s, l) => s + l.discountBps, 0) / all.length
+        : 0;
+    const avgConf =
+      all.length > 0
+        ? Math.round(
+            all.reduce((s, l) => s + l.confidenceScore, 0) / all.length,
+          )
+        : 0;
+    const bestDiscount =
+      unfunded.length > 0 ? Math.max(...unfunded.map((l) => l.discountBps)) : 0;
+    return {
+      total,
+      available,
+      avgDiscount,
+      avgConf,
+      bestDiscount,
+      count: all.length,
+      fundedCount: funded.length,
+    };
+  }, [apiListings]);
+
+  function handleFundClick(listing: MarketplaceListing) {
+    setFundError(null);
+    setSelectedListing(listing);
+    setFundDialogOpen(true);
+  }
+
+  async function handleConfirmFund() {
+    if (!selectedListing) return;
+    if (!authenticated || !wallets[0]) {
+      login();
+      return;
+    }
+    setFunding(true);
+    setFundError(null);
+
+    try {
+      // Fund via backend API (Hedera HTS)
+      const res = await fetch("/api/fund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceId: selectedListing.invoiceId,
+          funderHederaId: walletAddress || "0.0.0",
+        }),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        setApiListings((prev) =>
+          prev.map((l) =>
+            l.id === selectedListing.id
+              ? { ...l, funded: true, funder: walletAddress || "" }
+              : l,
+          ),
+        );
+        setRecentlyFunded((prev) => new Set(prev).add(selectedListing.id));
+        setFundDialogOpen(false);
+        setSelectedListing(null);
+      } else {
+        setFundError(
+          "Transaction sent but not confirmed yet. Check your wallet.",
+        );
+      }
+    } catch (err: any) {
+      console.error("Fund failed:", err);
+      setFundError(err?.message || "Transaction failed");
+    } finally {
+      setFunding(false);
+    }
+  }
+
+  const riskGrades: RiskFilter[] = ["All", "A", "B", "C", "D"];
+  const balanceNum = walletBalance !== null ? parseFloat(walletBalance) : null;
+  const purchasePriceUsdr = selectedListing ? selectedListing.purchasePrice : 0;
+  const insufficientBalance =
+    balanceNum !== null &&
+    purchasePriceUsdr > 0 &&
+    balanceNum < purchasePriceUsdr;
+
+  return (
+    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        {/* ── Header ── */}
+        <div>
+          <h1 className="font-heading text-4xl tracking-tight text-gray-900 md:text-5xl">
+            Earn
+          </h1>
+          <p className="mt-2 text-sm text-gray-500">
+            Fund AI-scored invoices and earn fixed yield on real-world
+            receivables
+          </p>
+        </div>
+
+        {/* ── Stats ── */}
+        <div
+          data-tour="marketplace-stats"
+          className="grid grid-cols-2 gap-3 md:grid-cols-4"
+        >
+          {loadingListings ? (
+            <>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="border-gray-200 bg-white">
+                  <CardContent className="p-4 space-y-2">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-7 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <Card className="border-gray-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="size-3.5 text-gray-400" />
+                    <p className="text-xs font-medium text-gray-400">
+                      Total Market
+                    </p>
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums text-gray-900">
+                    {formatCurrency(stats.total)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {stats.count} invoice{stats.count !== 1 ? "s" : ""}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-gray-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="size-3.5 text-lime-500" />
+                    <p className="text-xs font-medium text-gray-400">
+                      Available to Fund
+                    </p>
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums text-gray-900">
+                    {formatCurrency(stats.available)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {stats.fundedCount} already funded
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-gray-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="size-3.5 text-lime-500" />
+                    <p className="text-xs font-medium text-gray-400">
+                      Best Yield / Invoice
+                    </p>
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums text-lime-600">
+                    {stats.bestDiscount > 0
+                      ? formatBps(stats.bestDiscount)
+                      : "\u2014"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    avg {formatBps(stats.avgDiscount)} per invoice
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-gray-200 bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <ShieldCheck className="size-3.5 text-purple-400" />
+                    <p className="text-xs font-medium text-gray-400">
+                      Avg Confidence
+                    </p>
+                  </div>
+                  <p className="text-2xl font-bold tabular-nums text-gray-900">
+                    {stats.avgConf > 0 ? `${stats.avgConf}%` : "\u2014"}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    across all invoices
+                  </p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+
+        {/* ── Compounding note ── */}
+        {!loadingListings && stats.count > 0 && (
+          <div className="flex items-start gap-2.5 rounded-xl border border-lime-200 bg-lime-50 px-4 py-3 text-sm">
+            <TrendingUp className="mt-0.5 size-4 shrink-0 text-lime-600" />
+            <p className="text-lime-800">
+              <span className="font-semibold">Earn 2–5% per invoice.</span>{" "}
+              Reinvesting across consecutive 30-day invoices can compound to{" "}
+              <span className="font-semibold">20–30% annualised returns</span> —
+              without locking up capital long-term.
+            </p>
+          </div>
+        )}
+
+        {/* ── Filter Bar ── */}
+        <Card
+          data-tour="marketplace-filters"
+          className={`border-gray-200 bg-white shadow-sm ${loadingListings ? "opacity-40 pointer-events-none" : ""}`}
+        >
+          <CardContent className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500">
+                Risk Grade
+              </span>
+              <div className="flex gap-0.5">
+                {riskGrades.map((grade) => {
+                  const isActive = riskFilter === grade;
+                  const gc = grade !== "All" ? getGrade(grade) : null;
+                  return (
+                    <button
+                      key={grade}
+                      onClick={() => setRiskFilter(grade)}
+                      className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                        isActive
+                          ? gc
+                            ? `${gc.bg} ${gc.text}`
+                            : "bg-lime-400 text-lime-950"
+                          : "text-gray-500 hover:bg-gray-100"
+                      }`}
+                    >
+                      {grade}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setHideFunded((v) => !v)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  hideFunded
+                    ? "bg-zinc-800 text-white"
+                    : "text-gray-500 hover:bg-gray-100"
+                }`}
+              >
+                {hideFunded ? "Showing Available" : "Hide Funded"}
+              </button>
+              <p className="text-xs tabular-nums text-gray-400">
+                {filteredAndSorted.length} result
+                {filteredAndSorted.length !== 1 && "s"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── Table (Desktop) ── */}
+        {loadingListings ? (
+          <Card className="hidden overflow-hidden border-gray-200 bg-white shadow-sm md:block">
+            <div className="border-b border-gray-100 bg-gray-50/60 px-5 py-3 flex gap-4">
+              {["w-32", "w-24", "w-20", "w-16", "w-16", "w-20", "w-16"].map(
+                (w, i) => (
+                  <Skeleton
+                    key={i}
+                    className={`h-3 ${w} ${i > 1 ? "ml-auto" : ""}`}
+                  />
+                ),
+              )}
+            </div>
+            <div className="divide-y divide-gray-50">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-3.5 w-24" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                  <Skeleton className="h-5 w-14" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-6 w-8 rounded-full" />
+                  <Skeleton className="h-4 w-12" />
+                  <Skeleton className="h-8 w-16 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <Card className="hidden overflow-hidden border-gray-200 bg-white shadow-sm md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="py-3 pl-5 pr-2 text-left">
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        Invoice
+                      </span>
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <SortHeader
+                        label="Face Value"
+                        sortKey="faceValue"
+                        currentSort={sortBy}
+                        currentDir={sortDir}
+                        onSort={handleSort}
+                      />
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <SortHeader
+                        label="Yield / Tenure"
+                        sortKey="yield"
+                        currentSort={sortBy}
+                        currentDir={sortDir}
+                        onSort={handleSort}
+                      />
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <SortHeader
+                        label="Tenure"
+                        sortKey="tenure"
+                        currentSort={sortBy}
+                        currentDir={sortDir}
+                        onSort={handleSort}
+                      />
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <SortHeader
+                        label="Risk"
+                        sortKey="riskGrade"
+                        currentSort={sortBy}
+                        currentDir={sortDir}
+                        onSort={handleSort}
+                      />
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        AI Score
+                      </span>
+                    </th>
+                    <th className="px-2 py-3 text-left">
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        Tx Hash
+                      </span>
+                    </th>
+                    <th className="px-2 py-3 text-right">
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        Details
+                      </span>
+                    </th>
+                    <th className="py-3 pl-2 pr-5 text-right">
+                      <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        Action
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence mode="popLayout">
+                    {filteredAndSorted.map((listing) => {
+                      const isFunded =
+                        listing.funded || recentlyFunded.has(listing.id);
+                      const isHighRisk = listing.riskGrade === "D";
+                      const gc = getGrade(listing.riskGrade);
+
+                      return (
+                        <motion.tr
+                          key={listing.id}
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: isFunded ? 0.55 : 1 }}
+                          exit={{ opacity: 0 }}
+                          className={`group border-b border-gray-50 transition-colors ${isFunded ? "bg-gray-50/40" : ""}`}
+                        >
+                          {/* Invoice */}
+                          <td className="py-4 pl-5 pr-2">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={diceBearUrl(listing.invoiceId)}
+                                alt=""
+                                className="size-9 shrink-0 rounded-full ring-1 ring-gray-200"
+                              />
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-gray-900">
+                                  {formatInvoiceLabel(listing.invoiceId)}
+                                </p>
+                                <p className="truncate text-xs font-mono text-gray-400">
+                                  {listing.invoiceId}
+                                </p>
+                              </div>
+                              {isFunded && (
+                                <Badge className="ml-1 bg-gray-100 text-[10px] font-medium text-gray-500 shrink-0">
+                                  Funded
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          {/* Face Value */}
+                          <td className="px-2 py-4 text-right">
+                            <p className="text-sm font-medium tabular-nums text-gray-900">
+                              {formatCurrency(listing.faceValue)}
+                            </p>
+                            <p className="text-[11px] tabular-nums text-gray-400">
+                              {formatCurrency(listing.purchasePrice)}
+                            </p>
+                          </td>
+                          {/* Yield / Tenure */}
+                          <td className="px-2 py-4 text-right">
+                            <p className="text-sm font-semibold tabular-nums text-lime-700">
+                              {formatBps(listing.discountBps)}
+                            </p>
+                            <p className="text-[11px] tabular-nums text-gray-400">
+                              {listing.tenure}d tenure
+                            </p>
+                          </td>
+                          {/* Tenure */}
+                          <td className="px-2 py-4 text-right">
+                            <p className="text-sm tabular-nums text-gray-900">
+                              {listing.tenure}d
+                            </p>
+                            <p className="text-[11px] text-gray-400">
+                              {formatDate(listing.maturityDate)}
+                            </p>
+                          </td>
+                          {/* Risk Grade */}
+                          <td className="px-2 py-4 text-right">
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold ${gc.bg} ${gc.text}`}
+                            >
+                              {listing.riskGrade}
+                            </span>
+                          </td>
+                          {/* AI Score */}
+                          <td className="px-2 py-4 text-right text-xs text-gray-500">
+                            <ConfidenceDot score={listing.confidenceScore} />
+                          </td>
+                          {/* Tx Hash */}
+                          <td className="px-2 py-4">
+                            {listing.txHash ? (
+                              <a
+                                href={`https://coston2-explorer.flare.network/tx/${listing.txHash}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50 px-2 py-1 font-mono text-[10px] text-zinc-500 transition-colors hover:border-zinc-200 hover:bg-zinc-100 hover:text-zinc-700"
+                              >
+                                {listing.txHash.slice(0, 8)}\u2026
+                                {listing.txHash.slice(-6)}
+                                <ExternalLink className="size-2.5 shrink-0" />
+                              </a>
+                            ) : (
+                              <span className="text-xs text-gray-300">
+                                \u2014
+                              </span>
+                            )}
+                          </td>
+                          {/* AI Analysis */}
+                          <td className="px-2 py-4 text-right">
+                            <ScoringPopover
+                              listing={listing}
+                              onFund={handleFundClick}
+                              recentlyFunded={recentlyFunded}
+                            />
+                          </td>
+                          {/* Action */}
+                          <td className="py-4 pl-2 pr-5 text-right">
+                            {isFunded ? (
+                              <span className="text-xs text-gray-400">--</span>
+                            ) : isHighRisk ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="h-8 border-red-200 text-xs text-red-400"
+                              >
+                                <ShieldAlert className="mr-1 size-3" />
+                                Risky
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleFundClick(listing)}
+                                className="h-8 bg-lime-400 text-xs font-semibold text-lime-950 hover:bg-lime-500"
+                              >
+                                Fund
+                              </Button>
+                            )}
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
+        {/* ── Cards (Mobile) ── */}
+        {loadingListings ? (
+          <div className="space-y-3 md:hidden">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Card key={i} className="border-gray-200 bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-3.5 w-20" />
+                      <Skeleton className="h-3 w-14" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-6 w-8 rounded-full" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <div key={j} className="space-y-1">
+                      <Skeleton className="h-2.5 w-16" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                  ))}
+                </div>
+                <Skeleton className="h-8 w-full mt-3 rounded-md" />
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3 md:hidden">
+            <AnimatePresence mode="popLayout">
+              {filteredAndSorted.map((listing, index) => {
+                const isFunded =
+                  listing.funded || recentlyFunded.has(listing.id);
+                const isHighRisk = listing.riskGrade === "D";
+                const gc = getGrade(listing.riskGrade);
+
+                return (
+                  <motion.div
+                    key={listing.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: isFunded ? 0.6 : 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Card
+                      className={`border-gray-200 bg-white shadow-sm ${isFunded ? "bg-gray-50/60" : ""}`}
+                    >
+                      <CardContent className="space-y-3 p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <img
+                              src={diceBearUrl(listing.invoiceId)}
+                              alt=""
+                              className="size-8 shrink-0 rounded-full ring-1 ring-gray-200"
+                            />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium text-gray-900">
+                                {formatInvoiceLabel(listing.invoiceId)}
+                              </p>
+                              <p className="truncate text-[11px] font-mono text-gray-400">
+                                {listing.invoiceId}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`rounded-md px-2 py-0.5 text-xs font-bold ${gc.bg} ${gc.text}`}
+                            >
+                              {listing.riskGrade}
+                            </span>
+                            {isFunded && (
+                              <Badge className="bg-gray-100 text-[10px] text-gray-500">
+                                Funded
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          <div>
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                              Face Value
+                            </p>
+                            <p className="text-sm font-medium tabular-nums text-gray-900">
+                              {formatCurrency(listing.faceValue)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                              Yield / Tenure
+                            </p>
+                            <p className="text-sm font-semibold tabular-nums text-lime-700">
+                              {formatBps(listing.discountBps)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                              Purchase Price
+                            </p>
+                            <p className="text-xs tabular-nums text-gray-500">
+                              {formatCurrency(listing.purchasePrice)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                              Tenure
+                            </p>
+                            <p className="text-xs tabular-nums text-gray-500">
+                              {listing.tenure}d &middot;{" "}
+                              {formatDate(listing.maturityDate)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+                          <div className="flex items-center gap-2">
+                            <ScoringPopover
+                              listing={listing}
+                              onFund={handleFundClick}
+                              recentlyFunded={recentlyFunded}
+                            />
+                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                              <ConfidenceDot score={listing.confidenceScore} />
+                            </span>
+                          </div>
+                          {!isFunded &&
+                            (isHighRisk ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="h-7 border-red-200 text-[11px] text-red-400"
+                              >
+                                High Risk
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => handleFundClick(listing)}
+                                className="h-7 bg-lime-400 text-[11px] font-semibold text-lime-950 hover:bg-lime-500"
+                              >
+                                Fund
+                              </Button>
+                            ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {!loadingListings && filteredAndSorted.length === 0 && (
+          <div className="py-16 text-center text-sm text-gray-400">
+            No invoices match the selected filters.
+          </div>
+        )}
+      </div>
+
+      {/* ── Fund Confirmation Dialog ── */}
+      <Dialog open={fundDialogOpen} onOpenChange={setFundDialogOpen}>
+        <DialogContent className="bg-white sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl">
+              Confirm Funding
+            </DialogTitle>
+            {selectedListing && (
+              <DialogDescription className="text-gray-500">
+                Review the details below before funding this invoice.
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {selectedListing &&
+            (() => {
+              const gc = getGrade(selectedListing.riskGrade);
+              const profit =
+                selectedListing.faceValue - selectedListing.purchasePrice;
+              return (
+                <div className="space-y-4 py-2">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex size-10 items-center justify-center rounded-full ring-1 ${gc.bg} ${gc.text} ${gc.ring}`}
+                    >
+                      <span className="text-sm font-bold">
+                        {selectedListing.riskGrade}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 font-mono">
+                        {selectedListing.invoiceId}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Grade {selectedListing.riskGrade} &middot;{" "}
+                        {selectedListing.tenure}d tenure
+                      </p>
+                    </div>
+                  </div>
+
+                  {walletAddress && (
+                    <div className="flex items-center justify-between rounded-md border border-lime-200 bg-lime-50/50 px-3 py-2">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                        <Wallet className="size-3.5 text-lime-600" />
+                        Paying from:{" "}
+                        <span className="font-mono">
+                          {truncateAddress(walletAddress)}
+                        </span>
+                      </div>
+                      {walletBalance !== null && (
+                        <span className="text-xs font-medium text-gray-700">
+                          {parseFloat(walletBalance).toFixed(2)} USDr
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {insufficientBalance && (
+                    <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      <AlertTriangle className="size-3.5 shrink-0" />
+                      Insufficient USDr balance. Fund your wallet from the
+                      faucet first.
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        You Pay
+                      </p>
+                      <p className="text-lg font-bold tabular-nums text-gray-900">
+                        {formatCurrency(selectedListing.purchasePrice)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        You Receive
+                      </p>
+                      <p className="text-lg font-bold tabular-nums text-gray-900">
+                        {formatCurrency(selectedListing.faceValue)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        Supply APY
+                      </p>
+                      <p className="text-sm font-semibold tabular-nums text-lime-600">
+                        {formatBps(selectedListing.yieldBps)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        Net Profit
+                      </p>
+                      <p className="text-sm font-semibold tabular-nums text-lime-600">
+                        +{formatCurrency(profit)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        Tenure
+                      </p>
+                      <p className="text-sm tabular-nums text-gray-700">
+                        {selectedListing.tenure} days
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+                        Maturity
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {formatDate(selectedListing.maturityDate)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-md border border-gray-100 px-3 py-2 text-xs text-gray-500">
+                    <Info className="size-3.5 shrink-0 text-gray-400" />
+                    Attestation confidence: {selectedListing.confidenceScore}%
+                    &middot; Discount: {formatBps(selectedListing.discountBps)}
+                  </div>
+
+                  {fundError && (
+                    <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                      <AlertTriangle className="size-3.5 shrink-0" />
+                      {fundError}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setFundDialogOpen(false)}
+              className="border-gray-200"
+            >
+              Cancel
+            </Button>
+            {!authenticated ? (
+              <Button
+                onClick={() => login()}
+                className="gap-1.5 bg-lime-400 font-semibold text-lime-950 hover:bg-lime-500"
+              >
+                <Wallet className="size-3.5" />
+                Connect Wallet
+              </Button>
+            ) : (
+              <Button
+                onClick={handleConfirmFund}
+                disabled={funding || insufficientBalance}
+                className="gap-1.5 bg-lime-400 font-semibold text-lime-950 hover:bg-lime-500"
+              >
+                {funding ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Confirm in wallet...
+                  </>
+                ) : (
+                  `Fund ${selectedListing ? formatCurrency(selectedListing.purchasePrice) : ""}`
+                )}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
