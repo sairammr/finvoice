@@ -529,3 +529,770 @@ function FunderAnim() {
   );
 }
 
+export default function Home() {
+  return (
+    <div>
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-lime-100">
+        <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
+          <Logo />
+          <div className="flex items-center gap-8">
+            <Link
+              href="/marketplace"
+              className="text-base text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+            >
+              Earn
+            </Link>
+            <Link
+              href="/pitch"
+              className="text-base text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+            >
+              Pitch
+            </Link>
+            <Link
+              href="/marketplace"
+              className={buttonVariants({
+                size: "lg",
+                className:
+                  "bg-lime-400 text-lime-950 hover:bg-lime-500 rounded-full px-6 text-base font-semibold",
+              })}
+            >
+              Launch App <ArrowRight className="ml-1.5 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+        {/* Subtle grid bg */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(163,230,53,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(163,230,53,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        <div className="w-full pt-24 max-w-6xl mx-auto text-center relative">
+          {/* Logo-masked video sits behind all hero copy */}
+          <HeroLogoMaskVideo
+            className="absolute left-1/2 -top-40 z-0 h-[min(52rem,55vw)] w-[min(52rem,55vw)] -translate-x-1/2 mask-[url(/logo-mask.svg)] [-webkit-mask-image:url(/logo-mask.svg)] mask-center mask-no-repeat mask-contain"
+            videoClassName="filter hue-rotate-270"
+          />
+
+          <div className="relative z-10">
+            {/* Spacer lines up with the masked video area */}
+            <div
+              className="relative mx-auto w-full min-h-[min(17rem,52vw)]"
+              aria-hidden
+            />
+
+            <motion.h1
+              className="font-heading text-6xl md:text-8xl tracking-tight leading-[0.85] mb-6 mt-24"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={1}
+            >
+              Turn unpaid invoices into{` `}
+              <span className="text-lime-500 relative">
+                instant capital
+                <svg
+                  className="absolute -bottom-2 left-0 w-full"
+                  viewBox="0 0 300 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 8c50-6 100-6 150-2s100 2 146-4"
+                    stroke="#a3e635"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+            </motion.h1>
+
+            <motion.p
+              className="text-xl sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-4 leading-relaxed"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={2}
+            >
+              Suppliers get paid today, not in 30 days. Debtors approve with one
+              click. Funders earn{" "}
+              <span className="font-semibold text-foreground">
+                up to 26% APY
+              </span>{" "}
+              on risk-scored receivables.
+            </motion.p>
+
+            <motion.p
+              className="text-base text-muted-foreground mb-10"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={2.5}
+            >
+              All private. All on-chain. No wallets required.
+            </motion.p>
+
+            <motion.div
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={3}
+            >
+              <Link
+                href="/create-invoice"
+                className={buttonVariants({
+                  size: "lg",
+                  className:
+                    "bg-lime-400 text-lime-950 hover:bg-lime-500 rounded-full h-12 px-8 text-base font-semibold shadow-lg shadow-lime-400/25",
+                })}
+              >
+                Get Paid Today <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+              <Link
+                href="/marketplace"
+                className={buttonVariants({
+                  variant: "outline",
+                  size: "lg",
+                  className:
+                    "rounded-full h-12 px-8 text-base border-lime-200 hover:bg-lime-50",
+                })}
+              >
+                Earn Yield <TrendingUp className="ml-1.5 h-4 w-4" />
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={fadeUp}
+              custom={0}
+            >
+              <div className="inline-flex items-center gap-2 bg-lime-50 border border-lime-200 rounded-full px-4 py-1.5 text-sm text-lime-700 mt-8">
+                <Zap className="h-3.5 w-3.5" />
+                Built on Flare Privacy Infrastructure
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="mt-16"
+              animate={{ y: [0, 8, 0] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              <ChevronDown className="h-5 w-5 text-lime-400 mx-auto" />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* PAS — Problem Agitation Solution */}
+      <section className="px-6 py-24 md:py-32 border-t border-lime-100">
+        <div className="w-full max-w-5xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-mono text-lime-600 tracking-widest uppercase mb-4">
+              The Problem
+            </p>
+            <h2 className="font-heading text-5xl sm:text-6xl mb-4">
+              Invoice factoring is stuck in 1995
+            </h2>
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+              A $3.1 trillion market still runs on faxed PDFs, manual
+              reconciliation, and zero debtor consent.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-3 gap-6 mb-10">
+            {[
+              {
+                icon: AlertTriangle,
+                title: "No debtor consent",
+                desc: "Invoices tokenized unilaterally. No verification. No trust signal for buyers.",
+                color: "text-gray-500",
+                bg: "bg-gray-50",
+                border: "border-gray-200",
+              },
+              {
+                icon: EyeOff,
+                title: "Privacy violations",
+                desc: "Factoring means handing over your client list. Business relationships become public.",
+                color: "text-gray-500",
+                bg: "bg-gray-50",
+                border: "border-gray-200",
+              },
+              {
+                icon: Clock,
+                title: "Weeks to settle",
+                desc: "Manual credit checks, paper trails, and bank processing. Suppliers wait 30-90 days.",
+                color: "text-gray-500",
+                bg: "bg-gray-50",
+                border: "border-gray-200",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                className={`${item.bg} border ${item.border} rounded-2xl p-6`}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <item.icon className={`w-6 h-6 ${item.color} mb-4`} />
+                <h3 className="font-heading text-2xl mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            className="text-center bg-lime-50 border border-lime-200 rounded-2xl p-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <CheckCircle className="w-8 h-8 text-lime-600 mx-auto mb-4" />
+            <h3 className="font-heading text-3xl mb-3">
+              Hedsup fixes all three
+            </h3>
+            <p className="text-muted-foreground text-lg max-w-lg mx-auto">
+              Debtor-approved invoices. AI-scored risk on a sovereign Privacy
+              Node. Sub-second settlement. One PDF, one click.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Roles Section */}
+      <section className="px-6 py-24 md:py-32 bg-linear-to-b from-lime-50/50 to-white">
+        <div className="w-full max-w-5xl mx-auto">
+          <motion.div
+            className="text-center mb-16"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-mono text-lime-600 tracking-widest uppercase mb-4">
+              Three Roles, One Platform
+            </p>
+            <h2 className="font-heading text-5xl sm:text-6xl mb-4">
+              Everyone wins
+            </h2>
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+              Whether you need cash today, want to approve faster, or are
+              looking for real yield &mdash; there&rsquo;s a seat for you.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Supplier */}
+            <motion.div
+              className="relative group"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0 }}
+            >
+              <div className="bg-white border border-lime-200 rounded-2xl p-7 h-full group-hover:shadow-lg group-hover:shadow-lime-100/60 transition-all duration-300">
+                <div className="w-full h-28 rounded-xl bg-lime-50 mb-5 overflow-hidden flex items-center justify-center p-2">
+                  <SupplierAnim />
+                </div>
+                <h3 className="font-heading text-2xl mb-2">Supplier</h3>
+                <p className="text-base font-medium text-lime-700 mb-4">
+                  Get paid today, not in 30&ndash;90 days.
+                </p>
+                <p className="text-base text-muted-foreground leading-relaxed mb-6">
+                  Upload your invoice, send it for approval, and receive up to
+                  98% of its face value instantly. No banks, no paperwork, no
+                  waiting.
+                </p>
+                <div className="space-y-2.5 pt-4 border-t border-lime-100">
+                  {[
+                    "Instant liquidity on approved invoices",
+                    "Keep your client relationships private",
+                    "No minimum invoice size",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <CheckCircle className="w-4 h-4 text-lime-500 mt-0.5 shrink-0" />
+                      <span className="text-sm text-zinc-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Debtor */}
+            <motion.div
+              className="relative group"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.12 }}
+            >
+              <div className="bg-white border border-gray-200 rounded-2xl p-7 h-full group-hover:shadow-lg group-hover:shadow-gray-100/60 transition-all duration-300">
+                <div className="w-full h-28 rounded-xl bg-gray-50 mb-5 overflow-hidden flex items-center justify-center p-2">
+                  <DebtorAnim />
+                </div>
+                <h3 className="font-heading text-2xl mb-2">Debtor</h3>
+                <p className="text-base font-medium text-zinc-700 mb-4">
+                  One click. Full control.
+                </p>
+                <p className="text-base text-muted-foreground leading-relaxed mb-6">
+                  You approve the invoice in a PDF link &mdash; no wallet, no
+                  sign-up. Your identity stays on a private chain. You still pay
+                  the same amount on the same date.
+                </p>
+                <div className="space-y-2.5 pt-4 border-t border-gray-100">
+                  {[
+                    "Nothing changes about your payment terms",
+                    "Your identity never goes public",
+                    "Build an on-chain credit history privately",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <Shield className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
+                      <span className="text-sm text-zinc-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Funder */}
+            <motion.div
+              className="relative group"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.24 }}
+            >
+              <div className="bg-white border border-lime-200 rounded-2xl p-7 h-full group-hover:shadow-lg group-hover:shadow-lime-100/60 transition-all duration-300">
+                <div className="w-full h-28 rounded-xl bg-lime-50 mb-5 overflow-hidden flex items-center justify-center p-2">
+                  <FunderAnim />
+                </div>
+                <h3 className="font-heading text-2xl mb-2">Funder</h3>
+                <p className="text-base font-medium text-lime-700 mb-4">
+                  Earn real yield, not speculation.
+                </p>
+                <p className="text-base text-muted-foreground leading-relaxed mb-6">
+                  Buy invoices at a discount. AI scores the risk for you. When
+                  the debtor pays at maturity, you receive the full face value.
+                  Up to 26% APY on Grade&nbsp;A paper.
+                </p>
+                <div className="space-y-2.5 pt-4 border-t border-lime-100">
+                  {[
+                    "AI-scored risk grades (A through D)",
+                    "Short duration: 30 to 90 day returns",
+                    "Backed by real receivables, not hype",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-2.5">
+                      <TrendingUp className="w-4 h-4 text-lime-500 mt-0.5 shrink-0" />
+                      <span className="text-sm text-zinc-700">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Bottom flow connector */}
+          <motion.div
+            className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3 text-sm text-muted-foreground"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+          >
+            <span className="flex items-center gap-2">
+              <Truck className="w-4 h-4 text-lime-500" />
+              Supplier creates
+            </span>
+            <ChevronRight className="w-4 h-4 text-zinc-300 hidden sm:block" />
+            <ChevronDown className="w-4 h-4 text-zinc-300 sm:hidden" />
+            <span className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-gray-500" />
+              Debtor approves
+            </span>
+            <ChevronRight className="w-4 h-4 text-zinc-300 hidden sm:block" />
+            <ChevronDown className="w-4 h-4 text-zinc-300 sm:hidden" />
+            <span className="flex items-center gap-2">
+              <Brain className="w-4 h-4 text-purple-500" />
+              AI scores
+            </span>
+            <ChevronRight className="w-4 h-4 text-zinc-300 hidden sm:block" />
+            <ChevronDown className="w-4 h-4 text-zinc-300 sm:hidden" />
+            <span className="flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-blue-500" />
+              Funder earns
+            </span>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="w-full max-w-5xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-mono text-lime-600 tracking-widest uppercase mb-4">
+              How It Works
+            </p>
+            <h2 className="font-heading text-5xl sm:text-6xl mb-4">
+              Four steps to instant liquidity
+            </h2>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              {
+                icon: FileText,
+                title: "Create",
+                desc: "Supplier fills a form. Platform generates a special PDF with an approval button.",
+                step: "01",
+              },
+              {
+                icon: Shield,
+                title: "Approve",
+                desc: 'Debtor clicks "Approve on Flare" in the PDF. Invoice tokenized on Privacy Node.',
+                step: "02",
+              },
+              {
+                icon: Brain,
+                title: "Score",
+                desc: "AI reads private metadata, grades risk A-D, calculates yield. Attestation goes public.",
+                step: "03",
+              },
+              {
+                icon: DollarSign,
+                title: "Fund",
+                desc: "Funders purchase discounted invoices. Supplier gets paid instantly. Yield at maturity.",
+                step: "04",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                className="relative group"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.12 }}
+              >
+                {i < 3 && (
+                  <div className="hidden md:block absolute top-10 -right-3 w-6">
+                    <ArrowRight className="w-4 h-4 text-lime-300" />
+                  </div>
+                )}
+                <div className="bg-white border border-lime-100 rounded-2xl p-6 h-full group-hover:border-lime-300 group-hover:shadow-lg group-hover:shadow-lime-100/50 transition-all duration-300">
+                  <div className="text-sm font-mono text-lime-500 mb-3">
+                    {item.step}
+                  </div>
+                  <div className="w-12 h-12 bg-lime-100 rounded-lg flex items-center justify-center mb-4">
+                    <item.icon className="w-6 h-6 text-lime-600" />
+                  </div>
+                  <h3 className="font-heading text-2xl mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Privacy Design */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="w-full max-w-5xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-mono text-lime-600 tracking-widest uppercase mb-4">
+              Disclosure Design
+            </p>
+            <h2 className="font-heading text-5xl sm:text-6xl mb-4">
+              Privacy meets transparency
+            </h2>
+            <p className="text-muted-foreground text-xl max-w-2xl mx-auto">
+              The AI sees everything. The public sees only what matters for
+              pricing. Debtor identity{" "}
+              <span className="font-semibold text-foreground">
+                never leaves
+              </span>{" "}
+              the sovereign chain.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              className="bg-gray-50 border border-gray-200 rounded-2xl p-8"
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                  <EyeOff className="w-5 h-5 text-gray-600" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-xl">Flare TEE</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sovereign, confidential
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {[
+                  "Debtor identity & approval",
+                  "Payment history (3+ years)",
+                  "Jurisdiction & compliance",
+                  "Commercial terms",
+                  "Full AI reasoning",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 text-sm bg-white rounded-lg p-3 border"
+                  >
+                    <Lock className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="bg-lime-50 border border-lime-200 rounded-2xl p-8"
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-lime-200 rounded-lg flex items-center justify-center">
+                  <Eye className="w-5 h-5 text-lime-700" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-xl">Hedera HTS</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Marketplace pricing signals
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2.5">
+                {[
+                  "Risk grade (A-D)",
+                  "Annualized yield (APY)",
+                  "Face value & purchase price",
+                  "Maturity date & tenure",
+                  "PDF verification hash",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 text-sm bg-white rounded-lg p-3 border border-lime-100"
+                  >
+                    <Eye className="w-4 h-4 text-lime-500 shrink-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Yield Example */}
+      <section className="px-6 py-24 md:py-32 bg-lime-50/50 border-y border-lime-100">
+        <div className="w-full max-w-4xl mx-auto">
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            <p className="text-sm font-mono text-lime-600 tracking-widest uppercase mb-4">
+              Real Yield
+            </p>
+            <h2 className="font-heading text-5xl sm:text-6xl mb-4">
+              Not speculation. Time-value arbitrage.
+            </h2>
+          </motion.div>
+
+          <motion.div
+            className="bg-white border border-lime-200 rounded-2xl p-8 mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="text-sm font-mono text-lime-600 mb-4">
+              Example: $100k invoice, 30-day maturity, Grade A
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[
+                { label: "Face value", value: "$100,000" },
+                { label: "Purchase price", value: "$97,900" },
+                { label: "Funder yield", value: "$2,100" },
+                { label: "Annualized APY", value: "26.1%", accent: true },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="text-sm text-muted-foreground uppercase tracking-wide mb-1">
+                    {item.label}
+                  </div>
+                  <div
+                    className={`text-3xl font-bold ${item.accent ? "text-lime-600" : ""}`}
+                  >
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-3 gap-4 text-center">
+            {[
+              {
+                label: "Supplier gets",
+                value: "$97,900",
+                sub: "Paid instantly",
+              },
+              {
+                label: "Debtor pays",
+                value: "$100,000",
+                sub: "Same as always",
+              },
+              {
+                label: "Platform fee",
+                value: "0.3%",
+                sub: "At settlement only",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                className="bg-white border border-lime-100 rounded-xl p-5"
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <div className="text-sm text-muted-foreground mb-1">
+                  {item.label}
+                </div>
+                <div className="text-2xl font-bold">{item.value}</div>
+                <div className="text-sm text-lime-600 mt-1">{item.sub}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Banner */}
+      <section className="px-6 py-24 md:py-32 bg-lime-400">
+        <div className="w-full max-w-5xl mx-auto">
+          <div className="grid font-heading grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: "$3.1T", label: "Global factoring market" },
+              { value: "<1s", label: "Flare finality" },
+              { value: "26%", label: "APY on Grade A" },
+              { value: "0", label: "Wallets required" },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+              >
+                <div className="text-7xl sm:text-8xl font-bold text-lime-950 mb-3">
+                  {stat.value}
+                </div>
+                <div className="text-lg text-lime-800">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="px-6 py-24 md:py-32">
+        <div className="w-full max-w-3xl mx-auto text-center">
+          <motion.h2
+            className="font-heading text-6xl sm:text-7xl mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            Three trillion dollar market. <br />
+            <span className="text-lime-500">One click.</span>
+          </motion.h2>
+          <motion.p
+            className="text-xl text-muted-foreground mb-10 max-w-xl mx-auto"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+          >
+            Debtor approved it. AI scored it. Funder earned yield. Supplier got
+            cash. Private data never leaked.
+          </motion.p>
+          <motion.div
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Link
+              href="/create-invoice"
+              className={buttonVariants({
+                size: "lg",
+                className:
+                  "bg-lime-400 text-lime-950 hover:bg-lime-500 rounded-full h-14 px-10 text-lg font-semibold shadow-lg shadow-lime-400/25",
+              })}
+            >
+              Start Factoring <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+            <Link
+              href="/pitch"
+              className={buttonVariants({
+                variant: "outline",
+                size: "lg",
+                className:
+                  "rounded-full h-14 px-10 text-lg border-lime-200 hover:bg-lime-50",
+              })}
+            >
+              <Presentation className="mr-2 h-5 w-5" />
+              View Pitch Deck
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-lime-100 py-8 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Logo />
+          <div className="text-sm text-muted-foreground">
+            Private invoice factoring on Flare
+          </div>
+          <div className="flex gap-4 text-sm text-muted-foreground">
+            <Link href="/create-invoice" className="hover:text-foreground">
+              Create
+            </Link>
+            <Link href="/marketplace" className="hover:text-foreground">
+              Market
+            </Link>
+            <Link href="/dashboard" className="hover:text-foreground">
+              Dashboard
+            </Link>
+            <Link href="/pitch" className="hover:text-foreground">
+              Pitch
+            </Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
