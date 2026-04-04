@@ -41,7 +41,9 @@ export async function GET() {
       txHash: inv.flare_tx_hash || null,
       pdfHash: inv.pdf_hash,
       listedAt: inv.created_at,
+      status: inv.status,
       funded: inv.status === "funded" || inv.status === "settled",
+      settled: inv.status === "settled",
       funder: inv.funder_hedera_id || null,
       attestation: inv.hedera_attestation_serial
         ? { hederaSerial: inv.hedera_attestation_serial, network: process.env.NEXT_PUBLIC_HEDERA_NETWORK || "testnet", verified: true }

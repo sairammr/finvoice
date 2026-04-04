@@ -5,7 +5,7 @@ import { hashString } from "@/lib/contracts";
 import { createPublicClient, http } from "viem";
 
 const hederaClient = createPublicClient({
-  transport: http(process.env.HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"),
+  transport: http(process.env.NEXT_PUBLIC_HEDERA_RPC_URL  ?? "https://296.rpc.thirdweb.com"),
 });
 
 export async function GET(request: NextRequest) {

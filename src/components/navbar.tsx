@@ -106,7 +106,7 @@ export function Navbar() {
                 chainId: `0x${HEDERA_TESTNET_CHAIN_ID.toString(16)}`,
                 chainName: "Hedera Testnet",
                 nativeCurrency: { name: "HBAR", symbol: "HBAR", decimals: 18 },
-                rpcUrls: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL || "https://296.rpc.thirdweb.com"],
+                rpcUrls: [process.env.NEXT_PUBLIC_HEDERA_RPC_URL ?? "https://296.rpc.thirdweb.com"],
                 blockExplorerUrls: ["https://hashscan.io/testnet"],
               },
             ],
