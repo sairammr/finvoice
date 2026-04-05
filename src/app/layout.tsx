@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+export const dynamic = "force-dynamic";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { Providers } from "@/components/providers";
