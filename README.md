@@ -8,7 +8,6 @@ Invoice factoring — where businesses sell unpaid invoices for immediate cash �
 
 **Finvoice fixes all three.** Suppliers create invoices, debtors approve via a one-click PDF (no wallet needed), an AI agent scores credit risk privately inside a Flare TEE, and funders earn yield on a public marketplace — all while debtor identities remain completely private.
 
-Here's the judge-ready pitch:
 
 ---
 
@@ -246,6 +245,134 @@ scripts/
   setup-hcs-topics.ts     # Create HCS topics
   register-tee.ts         # Register TEE extension
   test-live-e2e.ts        # Full lifecycle E2E test
+```
+
+## Key Code Snippets
+
+### HCS-Backed Data Store (No Database)
+
+All state is stored as events on Hedera Consensus Service topics. On startup, the server replays HCS messages to rebuild in-memory state. Private fields are ECIES-encrypted before submission.
+
+```typescript
+// src/lib/hcs-store.ts — Submit event to HCS topic
+async function submitToTopic(topicId: TopicId, message: any): Promise<string> {
+  const tx = await new TopicMessageSubmitTransaction()
+    .setTopicId(topicId)
+    .setMessage(JSON.stringify(message))
+    .freezeWith(client);
+
+  const signed = await tx.sign(operatorKey);
+  const resp = await signed.execute(client);
+  const receipt = await resp.getReceipt(client);
+  return resp.transactionId.toString();
+}
+
+// Encrypt private fields before HCS submission
+function encryptPrivateFields(obj: Record<string, any>): Record<string, any> {
+  const result = { ...obj };
+  for (const field of PRIVATE_FIELDS) {
+    if (result[field] && typeof result[field] === "string") {
+      result[`_enc_${field}`] = encryptForFlare(ENCRYPTION_PUB_KEY, result[field]);
+      delete result[field];
+    }
+  }
+  return result;
+}
+```
+
+### ECIES Encryption (Flare secp256k1 + Hedera ED25519)
+
+Debtor PII is encrypted client-side before touching any blockchain. Flare TEE can decrypt inside the enclave.
+
+```typescript
+// src/lib/crypto.ts — Encrypt for Flare (secp256k1 ECIES)
+export function encryptForFlare(recipientPublicKeyHex: string, plaintext: string | Uint8Array): string {
+  const data = typeof plaintext === "string" ? Buffer.from(plaintext) : Buffer.from(plaintext);
+  const pubKeyClean = recipientPublicKeyHex.startsWith("0x")
+    ? recipientPublicKeyHex.slice(2) : recipientPublicKeyHex;
+  const encrypted = encrypt(pubKeyClean, data);
+  return "0x" + Buffer.from(encrypted).toString("hex");
+}
+```
+
+### Hedera HTS — Attestation NFT Minting (Zero Solidity)
+
+NFTs are minted purely via the Hedera SDK. Metadata is stored as a compact pipe-delimited string (max 100 bytes).
+
+```typescript
+// src/lib/hedera.ts — Mint attestation NFT
+export async function mintAttestationNFT(metadata: AttestationMetadata) {
+  const compact = [
+    metadata.invoiceId, metadata.riskGrade,
+    metadata.discountBps, metadata.yieldBps,
+    metadata.confidenceScore, metadata.attestationHash.slice(0, 20),
+  ].join("|");
+
+  const mintTx = await new TokenMintTransaction()
+    .setTokenId(attestationTokenId)
+    .addMetadata(Buffer.from(compact))
+    .freezeWith(client);
+
+  const signTx = await mintTx.sign(operatorKey);
+  const txResponse = await signTx.execute(client);
+  const receipt = await txResponse.getReceipt(client);
+  return { serialNumber: receipt.serials[0].toNumber(), txId: txResponse.transactionId.toString() };
+}
+```
+
+### Flare TEE — InvoiceInstructionSender (Only Solidity Contract)
+
+The single Solidity contract sends ECIES-encrypted invoice data to the TEE for private processing.
+
+```solidity
+// tee-extension/contract/InvoiceInstructionSender.sol
+function createInvoice(bytes calldata _encryptedData) external payable returns (bytes32) {
+    _teeIds = teeMachineRegistry.getRandomTeeIds(_extensionId, 1);
+
+    ITeeExtensionRegistry.TeeInstructionParams memory params = ITeeExtensionRegistry
+        .TeeInstructionParams({
+            opType: OP_TYPE_INVOICE,
+            opCommand: OP_COMMAND_CREATE,
+            message: _encryptedData,
+            cosigners: new address[](0),
+            cosignersThreshold: 0,
+            claimBackAddress: address(0)
+        });
+
+    bytes32 instructionId = teeExtensionRegistry.sendInstructions{value: msg.value}(_teeIds, params);
+    emit InstructionSent(instructionId, OP_COMMAND_CREATE, msg.sender);
+    return instructionId;
+}
+```
+
+### AI Credit Scoring (Inside TEE)
+
+GPT-4o-mini scores invoices privately. The reasoning stays inside the TEE — only the risk grade and discount rate are published.
+
+```typescript
+// src/lib/scoring.ts — AI scoring with privacy boundary
+const SYSTEM_PROMPT = `You are an institutional credit scoring agent operating inside a
+Flare Confidential Compute TEE. You have access to confidential invoice metadata that
+must NEVER be included in your public attestation.
+
+Grading scale:
+- A: Excellent payment history, low-risk jurisdiction, short maturity
+- B: Good payment history, moderate risk factors
+- C: Mixed payment history or elevated jurisdiction risk
+- D: Poor payment history, high risk, or compliance concerns`;
+
+export async function scoreInvoice(input: ScoringInput): Promise<ScoringResult> {
+  const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+  const r = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: userPrompt },
+    ],
+  });
+  // Returns { riskGrade, discountBps, yieldBps, confidenceScore, reasoning }
+}
 ```
 
 ## Tech Stack
