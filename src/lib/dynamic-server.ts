@@ -45,8 +45,34 @@ export async function dynamicSendEmailOtp(email: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       to: email,
-      subject: `Finvoice — Your verification code is ${code}`,
-      body: `Your Finvoice invoice approval code is: ${code}\n\nThis code expires in 10 minutes. Do not share it with anyone.\n\n— Finvoice`,
+      subject: "Access Your Invoice — Finvoice",
+      html: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/></head>
+<body style="margin:0;padding:0;background:#f4f4f7;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:40px 0;">
+    <tr><td align="center">
+      <table width="460" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);overflow:hidden;">
+        <tr><td style="background:linear-gradient(135deg,#6366f1,#8b5cf6);padding:32px 40px;text-align:center;">
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Finvoice</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Invoice Verification</p>
+        </td></tr>
+        <tr><td style="padding:36px 40px 20px;">
+          <p style="margin:0 0 8px;color:#374151;font-size:16px;">Hi there,</p>
+          <p style="margin:0 0 24px;color:#6b7280;font-size:15px;line-height:1.6;">Use the code below to access and approve your invoice. It expires in <strong>10 minutes</strong>.</p>
+          <div style="background:#f8f7ff;border:2px dashed #6366f1;border-radius:10px;padding:20px;text-align:center;margin:0 0 24px;">
+            <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#4f46e5;">${code}</span>
+          </div>
+          <p style="margin:0 0 4px;color:#9ca3af;font-size:13px;text-align:center;">Do not share this code with anyone.</p>
+        </td></tr>
+        <tr><td style="padding:20px 40px 32px;text-align:center;border-top:1px solid #f3f4f6;">
+          <p style="margin:0;color:#9ca3af;font-size:12px;">Powered by Finvoice &mdash; Private Invoice Factoring</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
     }),
   });
   if (!res.ok) {
