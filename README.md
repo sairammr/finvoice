@@ -2,7 +2,22 @@
 
 **Private invoice factoring powered by Flare TEE + Hedera HTS + HCS**
 
-Finvoice turns unpaid invoices into instant capital. Suppliers create invoices, debtors approve via a one-click PDF, AI scores them privately inside a Flare TEE, and funders earn yield on a public marketplace — all while debtor identities remain completely private.
+> _Three trillion dollar market. One click._
+
+Invoice factoring — where businesses sell unpaid invoices for immediate cash — is a **$3.1 trillion market** still running on faxed PDFs and blind trust. Legacy platforms tokenize invoices without debtor consent, leak private business relationships on-chain, and force users through MetaMask flows nobody wants.
+
+**Finvoice fixes all three.** Suppliers create invoices, debtors approve via a one-click PDF (no wallet needed), an AI agent scores credit risk privately inside a Flare TEE, and funders earn yield on a public marketplace — all while debtor identities remain completely private.
+
+## How It Works
+
+1. **Supplier** creates an invoice with line items, debtor details, and payment terms
+2. **Debtor** receives a PDF and clicks "Approve on Flare" — OTP-verified, no wallet, no dApp
+3. **AI Agent** scores credit risk privately inside a Flare Trusted Execution Environment (TEE)
+4. **Attestation NFT** is minted on Hedera with only the risk grade (A-D), yield, and confidence — no debtor PII
+5. **Funder** browses the marketplace, funds an invoice with HBAR, receives a Receipt NFT
+6. **At maturity**, the debtor pays face value, funder receives payout, Receipt NFT is burned
+
+The primitive: **PDF onramp.** That one click tokenizes the invoice on-chain and kicks off the entire pipeline. TradFi UX, DeFi rails.
 
 ## Architecture
 
@@ -15,32 +30,51 @@ Supplier → Next.js API → Flare TEE (Coston2) → Hedera HTS + HCS (Testnet)
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| **Privacy** | Flare Confidential Compute (TEE) | Private invoice data, AI credit scoring inside TEE |
-| **Tokens** | Hedera Token Service (HTS SDK) | Attestation NFTs, Receipt NFTs — zero Solidity |
-| **Storage** | Hedera Consensus Service (HCS) | Decentralized event store replacing traditional DB |
-| **Encryption** | ECIES (secp256k1) | Debtor PII encrypted before HCS submission |
-| **AI** | GPT-4o-mini | Credit scoring with risk grades A-D |
-| **Frontend** | Next.js 16, React 19, Tailwind 4 | Marketplace, dashboard, invoice creation |
-| **Auth** | Dynamic.xyz | Wallet connection + social login |
+| **Private Ledger** | Flare Confidential Compute (TEE) | Private invoice data, AI credit scoring inside hardware enclave |
+| **Public Ledger (Tokens)** | Hedera Token Service (HTS SDK) | Attestation NFTs, Receipt NFTs — zero Solidity on Hedera |
+| **Public Ledger (Storage)** | Hedera Consensus Service (HCS) | Decentralized event store — no database, state rebuilt from HCS replay |
+| **Encryption** | ECIES (secp256k1 + ED25519) | Debtor PII encrypted before HCS submission |
+| **AI Scoring** | GPT-4o-mini | Credit scoring with risk grades A-D, discount rates, confidence scores |
+| **Auth** | Dynamic.xyz | Wallet connection + social login for all user types |
 
 ## What Makes It Different
 
-- **No database** — All state lives on Hedera HCS topics. Server rebuilds state from HCS replay on startup.
-- **No Solidity on Hedera** — Pure SDK: `TokenCreateTransaction`, `TokenMintTransaction`, `TopicMessageSubmitTransaction`.
+- **No database** — All state lives on Hedera HCS topics. Server rebuilds state from HCS replay on startup. No MongoDB, no Postgres, no off-chain storage.
+- **No Solidity on Hedera** — Pure SDK: `TokenCreateTransaction`, `TokenMintTransaction`, `TopicMessageSubmitTransaction`. Zero smart contracts deployed on Hedera.
 - **Only 1 Solidity contract** — `InvoiceInstructionSender.sol` on Flare Coston2, sends instructions to the TEE.
 - **Privacy by default** — Debtor name, email, payment history never appear on any blockchain. Only risk grades and hashes are public.
-- **TEE-attested scoring** — AI scoring runs inside Flare's Trusted Execution Environment. Results are signed by the TEE key.
+- **TEE-attested scoring** — AI scoring runs inside Flare's Trusted Execution Environment. Results are signed by the TEE key. Private data never leaves the enclave.
+- **PDF onramp** — Debtors approve invoices through a regular PDF with OTP verification. No wallet, no dApp, no blockchain knowledge required.
 
-## Deployed Infrastructure
+## Deployed Contracts & Infrastructure
 
-| Component | ID / Address | Explorer |
-|-----------|-------------|----------|
-| Flare Contract | `0x616c83ff35d0a9572efb02246ee712a8d062f44b` | [Coston2 Explorer](https://coston2-explorer.flare.network/address/0x616c83ff35d0a9572efb02246ee712a8d062f44b) |
-| TEE Extension | ID 251, PRODUCTION status | — |
-| Attestation NFT | `0.0.8509042` | [HashScan](https://hashscan.io/testnet/token/0.0.8509042) |
-| Receipt NFT | `0.0.8509043` | [HashScan](https://hashscan.io/testnet/token/0.0.8509043) |
-| Invoice HCS Topic | `0.0.8511510` | [HashScan](https://hashscan.io/testnet/topic/0.0.8511510) |
-| Session HCS Topic | `0.0.8511512` | [HashScan](https://hashscan.io/testnet/topic/0.0.8511512) |
+### Flare Coston2 (Chain ID: 114)
+
+| Component | Address / ID | Link |
+|-----------|-------------|------|
+| **InvoiceInstructionSender** | `0x616c83ff35d0a9572efb02246ee712a8d062f44b` | [Coston2 Explorer](https://coston2-explorer.flare.network/address/0x616c83ff35d0a9572efb02246ee712a8d062f44b) |
+| **TEE Extension** | ID 251 — PRODUCTION status | Registered via `TeeExtensionRegistry` |
+| **TEE Machine** | `0x3910586391288d1Cf5212CAee4956e5087948726` | 442 data provider signatures verified |
+| **Operator Wallet** | `0x4e9Ff472Ce73a46b91E42f06B940F34F1BDBb83f` | [Explorer](https://coston2-explorer.flare.network/address/0x4e9Ff472Ce73a46b91E42f06B940F34F1BDBb83f) |
+
+### Hedera Testnet
+
+| Component | Token / Topic ID | Link |
+|-----------|-----------------|------|
+| **Attestation NFT Collection** | `0.0.8509042` (RATTEST) | [HashScan](https://hashscan.io/testnet/token/0.0.8509042) |
+| **Receipt NFT Collection** | `0.0.8509043` (RRECEIPT) | [HashScan](https://hashscan.io/testnet/token/0.0.8509043) |
+| **Invoice HCS Topic** | `0.0.8511510` | [HashScan](https://hashscan.io/testnet/topic/0.0.8511510) |
+| **Session HCS Topic** | `0.0.8511512` | [HashScan](https://hashscan.io/testnet/topic/0.0.8511512) |
+| **Operator Account** | `0.0.5864744` (ED25519) | [HashScan](https://hashscan.io/testnet/account/0.0.5864744) |
+
+### Key Contract Addresses Used (Flare Coston2)
+
+| Contract | Address |
+|----------|---------|
+| TeeExtensionRegistry | `0x3d478d43426081BD5854be9C7c5c183bfe76C981` |
+| TeeMachineRegistry | `0x5918Cd58e5caf755b8584649Aa24077822F87613` |
+| TeeVerification | `0x4D504e6717C63931F3FC36502EFdDAddc6Ce80A8` |
+| TeeOwnerAllowlist | `0xCb870e753F3f7B58e55A30EF367b6432dCC22835` |
 
 ## Invoice Lifecycle
 
@@ -65,6 +99,8 @@ Supplier → Next.js API → Flare TEE (Coston2) → Hedera HTS + HCS (Testnet)
 | Yield / discount | TEE result | Plaintext | NFT metadata |
 | Face value | Plaintext | Plaintext | NFT metadata |
 
+Private data stays private. Public markets stay liquid. AI agents connect the two.
+
 ## Quick Start
 
 ### Prerequisites
@@ -77,8 +113,8 @@ Supplier → Next.js API → Flare TEE (Coston2) → Hedera HTS + HCS (Testnet)
 ### Setup
 
 ```bash
-git clone https://github.com/sairammr/Ethglobal-2026.git
-cd Ethglobal-2026
+git clone https://github.com/sairammr/finvoice.git
+cd finvoice
 bun install
 cp .env.example .env
 # Fill in your keys (see .env.example)
@@ -144,24 +180,24 @@ NEXT_PUBLIC_FLARE_EXPLORER_URL=https://coston2-explorer.flare.network
 NEXT_PUBLIC_HEDERA_NETWORK=testnet
 ```
 
-## TEE Setup (Optional — for full privacy flow)
+## TEE Setup
 
-The TEE extension runs invoice scoring privately inside Flare's Confidential Compute.
+The TEE extension runs invoice scoring privately inside Flare's Confidential Compute. Requires Docker + Go + ngrok.
 
 ```bash
-# Clone the starter and configure
+# Clone the Flare starter and configure
 git clone https://github.com/flare-foundation/fce-sign.git /tmp/fce-sign
 cd /tmp/fce-sign
 # Set PRIVATE_KEY, INITIAL_OWNER, INSTRUCTION_SENDER in .env
-# Set DB credentials in config/proxy/extension_proxy.toml
+# Set DB credentials in config/proxy/extension_proxy.toml (get from Flare team)
 
 # Register + deploy
 cd go/tools
-go run ./cmd/register-extension
-docker compose up -d
-ngrok http 6676
+go run ./cmd/register-extension      # → Extension ID
+docker compose up -d                  # → 3 containers (redis + proxy + tee)
+ngrok http 6676                       # → Public tunnel URL
 go run ./cmd/allow-tee-version -p http://localhost:6676
-go run ./cmd/register-tee -p <ngrok-url> -l
+go run ./cmd/register-tee -p <ngrok-url> -l   # → TEE in PRODUCTION
 ```
 
 ## Project Structure
@@ -208,9 +244,8 @@ scripts/
 | Framework | Next.js 16 (Turbopack) |
 | Frontend | React 19, Tailwind CSS 4, Framer Motion |
 | Auth | Dynamic.xyz |
-| Blockchain (Privacy) | Flare Coston2 — TEE Extensions (Confidential Compute) |
-| Blockchain (Tokens) | Hedera Testnet — HTS SDK (zero Solidity) |
-| Blockchain (Storage) | Hedera Testnet — HCS Topics (decentralized event store) |
+| Blockchain (Private Ledger) | Flare Coston2 — TEE Extensions (Confidential Compute) |
+| Blockchain (Public Ledger) | Hedera Testnet — HTS SDK (zero Solidity) + HCS (decentralized storage) |
 | Encryption | ECIES via eciesjs (secp256k1 + ED25519) |
 | AI | GPT-4o-mini via OpenAI API |
 | PDF | React PDF Renderer + pdf-lib |
@@ -224,15 +259,20 @@ scripts/
 - The InstructionSender pattern (on-chain → proxy → TEE handler) is clean and intuitive
 
 **Challenges:**
-- TEE registration is governance-gated — had to use the Go tools, couldn't call `Register()` directly via viem
+- TEE registration is governance-gated — had to use the Go tools from `fce-sign`, couldn't call `TeeExtensionRegistry.Register()` directly via viem
 - FTDC availability check can time out — restarting the proxy to resync signing policies fixed it
-- C-chain indexer DB credentials are required for the proxy — needs to be documented more prominently
+- C-chain indexer DB credentials are required for the proxy — these are only available from the Flare team at the hackathon booth or TG group
 - No TypeScript tooling for registration (deploy/register/allow-version) — only Go
 
 **Suggestions:**
 - Publish a TypeScript version of the registration tools alongside the Go tools
-- Add a "hackathon mode" that skips FTDC availability check for faster iteration
-- Document the `extension_proxy.toml` DB credential requirement in the README, not just the TG group
+- Add a "hackathon mode" that skips the FTDC availability check for faster iteration
+- Document the `extension_proxy.toml` DB credential requirement more prominently in the README
+
+## Team
+
+- **Sairam** — Full Stack Developer
+- **Philo Sanjay** — Backend Developer
 
 ## License
 
