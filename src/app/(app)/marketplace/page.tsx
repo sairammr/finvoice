@@ -890,7 +890,7 @@ export default function MarketplacePage() {
       const txHash = await walletClient.sendTransaction({
         to: supplierAddress as `0x${string}`,
         value: amountInWei,
-        gas: 300000n,
+        gas: BigInt(300000),
       });
 
       // Step 2: Submit tx hash to backend for verification + receipt NFT mint

@@ -223,7 +223,7 @@ export default function DashboardPage() {
       const txHash = await walletClient.sendTransaction({
         to: funderAddress as `0x${string}`,
         value: amountInWei,
-        gas: 300000n,
+        gas: BigInt(300000),
       });
 
       // Submit tx to backend for verification + receipt NFT burn
