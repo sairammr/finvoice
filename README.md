@@ -8,6 +8,18 @@ Invoice factoring — where businesses sell unpaid invoices for immediate cash �
 
 **Finvoice fixes all three.** Suppliers create invoices, debtors approve via a one-click PDF (no wallet needed), an AI agent scores credit risk privately inside a Flare TEE, and funders earn yield on a public marketplace — all while debtor identities remain completely private.
 
+Here's the judge-ready pitch:
+
+---
+
+**Finvoice** tackles one of the most overlooked inefficiencies in global finance: small businesses sitting on unpaid invoices, unable to access the capital they're already owed — because traditional invoice factoring demands full transparency into their customer relationships. Handing over debtor names, payment histories, and financials to a bank or middleman is a dealbreaker for most SMBs. Finvoice eliminates that tradeoff entirely.
+
+The core innovation is a fully private invoice factoring pipeline built across two blockchains. Debtor identity is ECIES-encrypted client-side before anything touches a ledger. Credit scoring runs inside a **Flare TEE** (Trusted Execution Environment) — meaning an AI model evaluates the invoice using real debtor data, inside a cryptographic enclave, and the identity never escapes. What comes out is a signed, TEE-attested risk grade (A–D) and yield rate, minted as an **Attestation NFT on Hedera**. Funders see the grade. Nobody sees the debtor.
+
+The architecture is just as bold as the privacy model. There is no traditional database — zero Postgres, zero MongoDB. All application state lives on **Hedera Consensus Service topics** as encrypted append-only event logs, replayed into memory on startup. Invoices and receipts are tokenized as Hedera NFTs using pure `@hashgraph/sdk`. Debtors approve via a one-click PDF email link — no wallet, no blockchain knowledge required. Auth is handled by Dynamic.xyz, bridging EVM and Hedera wallets in a single session across Flare Coston2 and Hedera Testnet.
+
+Finvoice proves that real-world asset tokenization doesn't have to sacrifice privacy. The entire invoice lifecycle — creation, debtor approval, AI scoring, marketplace listing, funding, and settlement — runs with cryptographic guarantees at every step, on live deployed infrastructure, with zero traditional backend. It's a complete, production-grade DeFi primitive for a $3.5 trillion market that's never had a privacy-preserving alternative.
+
 ## How It Works
 
 1. **Supplier** creates an invoice with line items, debtor details, and payment terms
