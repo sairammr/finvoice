@@ -209,7 +209,7 @@ export default function DashboardPage() {
     setSettlingId(inv.id);
     try {
       const connector = primaryWallet.connector;
-      const provider = await (connector as any).getPublicClient();
+      const walletClient = await (connector as any).getWalletClient();
       const funderAddress = listing.funder;
 
       if (!funderAddress) {
@@ -220,14 +220,10 @@ export default function DashboardPage() {
 
       // Send face value HBAR from debtor/supplier wallet to funder wallet
       const amountInWei = BigInt(Math.round(Number(inv.amount) * 1e18));
-      const txHash = await (provider as any).request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: walletAddress,
-          to: funderAddress,
-          value: "0x" + amountInWei.toString(16),
-          gas: "0x" + BigInt(300000).toString(16),
-        }],
+      const txHash = await walletClient.sendTransaction({
+        to: funderAddress as `0x${string}`,
+        value: amountInWei,
+        gas: 300000n,
       });
 
       // Submit tx to backend for verification + receipt NFT burn

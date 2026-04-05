@@ -876,7 +876,7 @@ export default function MarketplacePage() {
 
     try {
       const connector = primaryWallet!.connector;
-      const provider = await (connector as any).getPublicClient();
+      const walletClient = await (connector as any).getWalletClient();
       const supplierAddress = (selectedListing as any).supplierAddress;
 
       if (!supplierAddress) {
@@ -887,14 +887,10 @@ export default function MarketplacePage() {
 
       // Step 1: Send HBAR from funder's wallet to invoice creator's wallet
       const amountInWei = BigInt(Math.round(selectedListing.purchasePrice * 1e18));
-      const txHash = await (provider as any).request({
-        method: "eth_sendTransaction",
-        params: [{
-          from: walletAddress,
-          to: supplierAddress,
-          value: "0x" + amountInWei.toString(16),
-          gas: "0x" + BigInt(300000).toString(16),
-        }],
+      const txHash = await walletClient.sendTransaction({
+        to: supplierAddress as `0x${string}`,
+        value: amountInWei,
+        gas: 300000n,
       });
 
       // Step 2: Submit tx hash to backend for verification + receipt NFT mint
